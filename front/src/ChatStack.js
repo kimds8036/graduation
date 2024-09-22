@@ -1,14 +1,11 @@
-// App.js
+// src/ChatStack.js
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import ChatScreen from './src/ChatScreen';
-import ChatDetailScreen from './src/ChatDetailScreen';
-import Rowbar from './src/Rowbar'; // Rowbar import
+import ChatScreen from './ChatScreen';
+import ChatDetailScreen from './ChatDetailScreen';
 
 const Stack = createStackNavigator();
 
-// Chat Stack Navigator
 function ChatStack() {
   return (
     <Stack.Navigator>
@@ -26,12 +23,4 @@ function ChatStack() {
   );
 }
 
-function App() {
-  return (
-    <NavigationContainer>
-      <Rowbar /> // Rowbar 사용
-    </NavigationContainer>
-  );
-}
-
-export default App;
+export default ChatStack;
