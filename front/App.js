@@ -1,12 +1,13 @@
-// App.js
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import ChatScreen from './src/ChatScreen';
 import ChatDetailScreen from './src/ChatDetailScreen';
-import Rowbar from './src/Rowbar'; // Rowbar import
+import Rowbar from './src/Rowbar'; // 예시 컴포넌트들
 
 const Stack = createStackNavigator();
+const Tab = createBottomTabNavigator();
 
 // Chat Stack Navigator
 function ChatStack() {
@@ -26,10 +27,20 @@ function ChatStack() {
   );
 }
 
+// Bottom Tab Navigator (Rowbar 역할)
+function TabNavigator() {
+  return (
+    <Tab.Navigator>
+      <Tab.Screen name="Chat" component={ChatStack} />
+      
+    </Tab.Navigator>
+  );
+}
+
 function App() {
   return (
     <NavigationContainer>
-      <Rowbar /> // Rowbar 사용
+      <Rowbar />
     </NavigationContainer>
   );
 }
