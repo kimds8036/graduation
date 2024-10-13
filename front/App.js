@@ -29,7 +29,7 @@ function ChatStack() {
 function App() {
   return (
     <NavigationContainer>
-      <Rowbar /> // Rowbar 사용
+      <Rowbar />
     </NavigationContainer>
   );
 }
