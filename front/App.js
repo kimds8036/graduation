@@ -1,37 +1,32 @@
-// App.js
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import ChatScreen from './src/ChatScreen';
-import ChatDetailScreen from './src/ChatDetailScreen';
-import Rowbar from './src/Rowbar'; // Rowbar import
+import ChatScreen from './src/ChatScreen';  // ChatScreen 컴포넌트
+import ChatDetailScreen from './src/ChatDetailScreen'; // ChatDetailScreen 컴포넌트
+import StudentCardOCR from './src/StudentCardOCR'; // StudentCardOCR 컴포넌트
 
 const Stack = createStackNavigator();
 
-// Chat Stack Navigator
-function ChatStack() {
-  return (
-    <Stack.Navigator>
-      <Stack.Screen
-        name="ChatScreen"
-        component={ChatScreen}
-        options={{ headerShown: false }} // 기본 화면에 상단바 숨김
-      />
-      <Stack.Screen
-        name="ChatDetailScreen"
-        component={ChatDetailScreen}
-        options={{ headerShown: false }} // 상세 화면에 상단바 숨김
-      />
-    </Stack.Navigator>
-  );
-}
-
-function App() {
+export default function App() {
   return (
     <NavigationContainer>
-      <Rowbar />
+      <Stack.Navigator initialRouteName="StudentCardOCR">
+        <Stack.Screen 
+          name="StudentCardOCR" 
+          component={StudentCardOCR} 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
+          name="ChatScreen" 
+          component={ChatScreen} 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
+          name="ChatDetailScreen" 
+          component={ChatDetailScreen} 
+          options={{ headerShown: false }} 
+        />
+      </Stack.Navigator>
     </NavigationContainer>
   );
 }
-
-export default App;

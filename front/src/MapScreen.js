@@ -1,78 +1,115 @@
-// src/MapScreen.js
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ActivityIndicator, Alert, Text } from 'react-native';
-import MapView, { Marker, UrlTile } from 'react-native-maps';
+import { StyleSheet, View, Dimensions, TouchableOpacity, Image } from 'react-native';
+import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
+import { Ionicons } from '@expo/vector-icons';
 
-const MapScreen = () => {
+export default function App() {
   const [location, setLocation] = useState(null);
+  const [region, setRegion] = useState({
+    latitude: 37.78825,
+    longitude: -122.4324,
+    latitudeDelta: 0.0922,
+    longitudeDelta: 0.0421,
+  });
+
+  let mapRef = null;
 
   useEffect(() => {
     (async () => {
-      // 위치 권한 요청
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('위치 권한이 필요합니다.');
+        console.log('Permission to access location was denied');
         return;
       }
 
-      // 현재 위치 가져오기
       let currentLocation = await Location.getCurrentPositionAsync({});
       setLocation(currentLocation.coords);
+      setRegion({
+        latitude: currentLocation.coords.latitude,
+        longitude: currentLocation.coords.longitude,
+        latitudeDelta: 0.005,
+        longitudeDelta: 0.005,
+      });
     })();
   }, []);
 
-  // 위치 정보가 없을 때 로딩 표시
-  if (!location) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
-        <Text>현재 위치를 불러오는 중입니다...</Text>
-      </View>
-    );
-  }
+  const goToCurrentLocation = async () => {
+    let currentLocation = await Location.getCurrentPositionAsync({});
+    const newRegion = {
+      latitude: currentLocation.coords.latitude,
+      longitude: currentLocation.coords.longitude,
+      latitudeDelta: 0.005,
+      longitudeDelta: 0.005,
+    };
+
+    // 부드러운 화면 이동
+    mapRef.animateToRegion(newRegion, 1000); // 1초 동안 부드럽게 이동
+  };
 
   return (
     <View style={styles.container}>
       <MapView
+        ref={(ref) => (mapRef = ref)} // MapView 참조를 설정하여 animateToRegion을 사용할 수 있도록 함
         style={styles.map}
-        initialRegion={{
-          latitude: location.latitude,
-          longitude: location.longitude,
-          latitudeDelta: 0.01,
-          longitudeDelta: 0.01,
-        }}
-        showsUserLocation={true}
+        region={region}
+        showsUserLocation={false} // 파란 점 제거
+        onRegionChangeComplete={region => setRegion(region)}
       >
-        {/* OpenStreetMap 타일을 사용하는 UrlTile */}
-        <UrlTile
-          urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png" // 올바른 URL 템플릿 사용
-          maximumZ={19} // 최대 확대 레벨 설정
-        />
-        <Marker
-          coordinate={{ latitude: location.latitude, longitude: location.longitude }}
-          title="현위치"
-          description="현재 위치입니다."
-          pinColor="blue"
-        />
+        {location && (
+          <Marker
+            coordinate={{
+              latitude: location.latitude,
+              longitude: location.longitude,
+            }}
+            title="현재 위치"
+          >
+            
+            <Image
+              source={require('../assets/custom-marker.png')} // 원하는 이미지 파일 경로
+              style={{ width: 40, height: 40 }} // 이미지 크기 조정
+            />
+          </Marker>
+        )}
       </MapView>
+
+      
+      <TouchableOpacity style={styles.locationButton} onPress={goToCurrentLocation}>
+  <Ionicons name="compass-outline" size={22} color="black" /> 
+</TouchableOpacity>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  map: {
-    width: '100%',
-    height: '100%',
-  },
-  loadingContainer: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  map: {
+    width: Dimensions.get('window').width,
+    height: Dimensions.get('window').height,
+  },
+  locationButton: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    backgroundColor: '#fff',
+    padding: 10,
+    borderRadius: 30, // 동그란 버튼
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 2,
+    elevation: 5,
+    width: 40, // 버튼 크기
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  locationIcon: {
+    width: 30, // 아이콘 크기
+    height: 30,
+  },
 });
-
-export default MapScreen;
