@@ -32,6 +32,19 @@ function SaveRouteScreen() {
   );
 }
 
+// Stack 네비게이터 생성
+const Stack = createStackNavigator();
+
+// HomeStack을 생성해 Homescreen과 Matching1을 관리
+function HomeStack() {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen name="Home" component={Homescreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Matching1" component={Matching1} options={{ headerShown: false }} />
+    </Stack.Navigator>
+  );
+}
+
 // Tab 네비게이터 생성
 const Tab = createBottomTabNavigator();
 
@@ -43,7 +56,7 @@ function TabNavigator() {
         tabBarIcon: ({ color, size }) => {
           let iconName;
 
-          if (route.name === 'Home') {
+          if (route.name === 'HomeStack') {
             iconName = 'home-outline';
           } else if (route.name === 'Chat') {
             iconName = 'chatbubble-outline';
@@ -60,7 +73,8 @@ function TabNavigator() {
         headerShown: false,
       })}
     >
-      <Tab.Screen name="Home" component={Homescreen} />
+      {/* HomeStack을 TabNavigator에 추가 */}
+      <Tab.Screen name="HomeStack" component={HomeStack} options={{ title: 'Home' }} />
       <Tab.Screen name="Chat" component={ChatScreen} />
       <Tab.Screen name="Map" component={MapScreen} />
       <Tab.Screen name="SaveRoute" component={SaveRouteScreen} />
@@ -68,17 +82,10 @@ function TabNavigator() {
   );
 }
 
-// Stack 네비게이터 생성
-const Stack = createStackNavigator();
-
 function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="TabNavigator">
-        {/* TabNavigator를 스택의 초기 화면으로 설정 */}
-        <Stack.Screen name="TabNavigator" component={TabNavigator} options={{ headerShown: false }} />
-        <Stack.Screen name="Matching1" component={Matching1} options={{ headerShown: false }} />
-      </Stack.Navigator>
+      <TabNavigator />
     </NavigationContainer>
   );
 }
