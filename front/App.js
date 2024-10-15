@@ -6,6 +6,8 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 import Homescreen from './src/Homescreen';
 import Matching1 from './src/Matching1.js';  // Matching1을 import
+import BoardScreen from './src/Boardscreen.js';  // BoardScreen import
+import WritePostScreen from './src/Writepostscreen.js';  // WritePostScreen import
 
 // 각 화면 컴포넌트
 function ChatScreen() {
@@ -35,12 +37,14 @@ function SaveRouteScreen() {
 // Stack 네비게이터 생성
 const Stack = createStackNavigator();
 
-// HomeStack을 생성해 Homescreen과 Matching1을 관리
+// HomeStack을 생성해 Homescreen과 Matching1, BoardScreen, WritePostScreen을 관리
 function HomeStack() {
   return (
     <Stack.Navigator>
       <Stack.Screen name="Home" component={Homescreen} options={{ headerShown: false }} />
       <Stack.Screen name="Matching1" component={Matching1} options={{ headerShown: false }} />
+      <Stack.Screen name="Boardscreen" component={BoardScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="WritePostScreen" component={WritePostScreen} options={{ headerShown: false }} /> 
     </Stack.Navigator>
   );
 }
@@ -73,7 +77,7 @@ function TabNavigator() {
         headerShown: false,
       })}
     >
-      {/* HomeStack을 TabNavigator에 추가 */}
+      
       <Tab.Screen name="HomeStack" component={HomeStack} options={{ title: 'Home' }} />
       <Tab.Screen name="Chat" component={ChatScreen} />
       <Tab.Screen name="Map" component={MapScreen} />
