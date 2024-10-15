@@ -1,6 +1,9 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, SafeAreaView } from 'react-native';
 import TopBar from './TopBar'; // TopBar를 import
+import { useNavigation } from '@react-navigation/native'; // navigation 추가
+import Matching1 from './Matching1'; // 경로 수정
+
 
 const users = [
   {
@@ -27,17 +30,21 @@ const users = [
 ];
 
 function Homescreen() {
+  const navigation = useNavigation(); // navigation hook 사용
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <TopBar /> 
+      <TopBar />
+      
       <ScrollView style={styles.container}>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>동선이 비슷한 친구들이에요</Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('Matching1')}>
             <Text style={styles.moreText}>더보기 &gt;</Text>
           </TouchableOpacity>
         </View>
 
+        {/* 유저 목록 */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.userContainer}>
           {users.map((user, index) => (
             <View key={index} style={styles.userCard}>
@@ -78,6 +85,7 @@ function Homescreen() {
           </View>
         </View>
       </ScrollView>
+      
     </SafeAreaView>
   );
 }
@@ -86,10 +94,11 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#fff',
+    
   },
   container: {
     flex: 1,
-    paddingHorizontal: 15,
+    paddingHorizontal: 13,  // 좌우 여백을 동일하게 설정
     paddingVertical: 10,
   },
   section: {
@@ -185,3 +194,4 @@ const styles = StyleSheet.create({
 });
 
 export default Homescreen;
+
