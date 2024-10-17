@@ -1,28 +1,32 @@
-const fetch = require('node-fetch');
+const User = require('../models/User');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
-exports.getKakaoAccessToken = async (req, res) => {
-  const { code } = req.body; // 클라이언트에서 받은 Authorization Code
-
+// 회원가입
+exports.register = async (req, res) => {
+  const { username, password, name, department, studentId } = req.body;
   try {
-    const response = await fetch('https://kauth.kakao.com/oauth/token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: `grant_type=authorization_code&client_id=YOUR_REST_API_KEY&redirect_uri=YOUR_REDIRECT_URI&code=${code}`,
-    });
+    const user = new User({ username, password, name, department, studentId });
+    await user.save();
+    res.status(201).json({ message: '회원가입 성공' });
+  } catch (err) {
+    res.status(500).json({ error: '회원가입 실패' });
+  }
+};
 
-    const json = await response.json();
-    const accessToken = json.access_token;
+// 로그인
+exports.login = async (req, res) => {
+  const { username, password } = req.body;
+  try {
+    const user = await User.findOne({ username });
+    if (!user) return res.status(404).json({ error: '사용자 없음' });
 
-    if (accessToken) {
-      // Access Token을 받아온 후, 클라이언트로 전달하거나 세션 처리
-      res.status(200).json({ accessToken });
-    } else {
-      res.status(400).json({ message: 'Failed to get Access Token' });
-    }
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ error: '비밀번호 불일치' });
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    res.json({ token, user });
+  } catch (err) {
+    res.status(500).json({ error: '로그인 실패' });
   }
 };
