@@ -1,8 +1,12 @@
+require('dotenv').config({ path: './config/.env' });
 const express = require('express');
 const mongoose = require('mongoose');
 const redis = require('redis');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const authRoutes = require('./routes/authRoutes');  // 로그인 및 회원가입 라우트 불러오기
+const ocrRoutes = require('./routes/ocrRoutes');
+
 
 dotenv.config();
 
@@ -21,6 +25,9 @@ redisClient.connect()
   .then(() => console.log('Redis 연결 성공'))
   .catch(err => console.error('Redis 연결 실패:', err));
 
+// 라우트 설정
+app.use('/api/auth', authRoutes);  // '/api/auth' 경로로 로그인 및 회원가입 처리
+app.use('/api/ocr', ocrRoutes); // /api/ocr 엔드포인트로 접근 가능
 // 서버 실행
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

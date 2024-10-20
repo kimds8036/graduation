@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, AsyncStorage } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -8,7 +8,9 @@ import Homescreen from './src/Homescreen';
 import Matching1 from './src/Matching1.js';  // Matching1을 import
 import BoardScreen from './src/Boardscreen.js';  // BoardScreen import
 import WritePostScreen from './src/Writepostscreen.js';  // WritePostScreen import
-import MapScreen from './src/MapScreen.js';  // MapScreen import (이 부분 수정)
+import MapScreen from './src/MapScreen.js';  // MapScreen import
+import LoginScreen from './src/LoginScreen';  // LoginScreen import
+import SignupScreen from './src/SignupScreen';  // SignupScreen import
 
 // 각 화면 컴포넌트
 function ChatScreen() {
@@ -37,7 +39,7 @@ function HomeStack() {
       <Stack.Screen name="Home" component={Homescreen} options={{ headerShown: false }} />
       <Stack.Screen name="Matching1" component={Matching1} options={{ headerShown: false }} />
       <Stack.Screen name="Boardscreen" component={BoardScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="WritePostScreen" component={WritePostScreen} options={{ headerShown: false }} /> 
+      <Stack.Screen name="WritePostScreen" component={WritePostScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }
@@ -72,16 +74,39 @@ function TabNavigator() {
     >
       <Tab.Screen name="HomeStack" component={HomeStack} options={{ title: 'Home' }} />
       <Tab.Screen name="Chat" component={ChatScreen} />
-      <Tab.Screen name="Map" component={MapScreen} /> 
+      <Tab.Screen name="Map" component={MapScreen} />
       <Tab.Screen name="SaveRoute" component={SaveRouteScreen} />
     </Tab.Navigator>
   );
 }
 
+// AuthStack: 로그인 및 회원가입 화면 관리
+function AuthStack() {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Signup" component={SignupScreen} options={{ headerShown: false }} />
+    </Stack.Navigator>
+  );
+}
+
 function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    // 자동 로그인 시도
+    const checkAutoLogin = async () => {
+      const token = await AsyncStorage.getItem('jwt_token');
+      if (token) {
+        setIsLoggedIn(true);
+      }
+    };
+    checkAutoLogin();
+  }, []);
+
   return (
     <NavigationContainer>
-      <TabNavigator />
+      {isLoggedIn ? <TabNavigator /> : <AuthStack />}  
     </NavigationContainer>
   );
 }

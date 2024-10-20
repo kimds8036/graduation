@@ -1,8 +1,15 @@
 const express = require('express');
-const { register, login } = require('../controllers/authController');
+const { login, autoLogin, signup } = require('../controllers/authController');
 const router = express.Router();
 
-router.post('/register', register);
+// 로그인
 router.post('/login', login);
+
+// 자동 로그인
+router.post('/auto-login', autoLogin);
+
+
+router.post('/signup', signup);
+
 
 module.exports = router;
