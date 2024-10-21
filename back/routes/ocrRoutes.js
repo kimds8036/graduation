@@ -2,8 +2,8 @@ const express = require('express');
 const { extractStudentCardInfo } = require('../services/ocrService'); // OCR 서비스 함수 가져오기
 const router = express.Router();
 
-// OCR 요청을 처리하는 라우트
-router.post('/ocr', async (req, res) => {
+// OCR 요청을 처리하는 라우트 (POST 요청 처리)
+router.post('/', async (req, res) => {
   const { base64Image } = req.body;
 
   try {
