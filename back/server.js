@@ -5,6 +5,8 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const authRoutes = require('./routes/authRoutes');  // 로그인 및 회원가입 라우트
 const ocrRoutes = require('./routes/ocrRoutes');    // OCR 라우트
+const uploadRoutes = require('./routes/uploadRoutes');
+
 
 dotenv.config();
 
@@ -34,7 +36,7 @@ app.use('/api/ocr', (req, res, next) => {
 // 라우트 설정
 app.use('/api/auth', authRoutes);  // 로그인 및 회원가입 라우트
 app.use('/api/ocr', ocrRoutes);    // OCR 라우트 연결
-
+app.use('/api/upload', uploadRoutes);
 // 서버 실행
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

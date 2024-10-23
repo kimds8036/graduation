@@ -31,7 +31,7 @@ const extractStudentCardInfo = async (base64Image) => {
           'Content-Type': 'application/json',
           'X-OCR-SECRET': process.env.NAVER_OCR_SECRET, // .env 파일에 저장된 네이버 OCR Secret
         },
-        timeout: 10000 // 타임아웃을 10초로 설정 (10000ms)
+        timeout: 3000 // 타임아웃을 10초로 설정 (10000ms)
       }
     );
 

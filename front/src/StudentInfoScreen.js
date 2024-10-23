@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Modal, StyleSheet, Image, ScrollView } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
+import { View, Text, TextInput, TouchableOpacity, Modal, StyleSheet, Image, ScrollView, Alert } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';  // Expo Image Picker 사용
 import axios from 'axios';
 
 
@@ -25,8 +25,9 @@ const MBTI_OPTIONS = [
   
 ];
 
+
 const StudentInfoScreen = ({ route }) => {
-  const { extractedData } = route.params;
+  const { extractedData = {} } = route.params || {};
   const [mbti, setMbti] = useState('');
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
@@ -34,57 +35,84 @@ const StudentInfoScreen = ({ route }) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  const handleSubmit = async () => {
-    if (password !== confirmPassword) {
-      alert('비밀번호가 일치하지 않습니다. 다시 입력해주세요.');
-    } else {
-      if (profileImage) {
-        const downloadURL = await uploadImageToBackend(profileImage);  // 이미지 업로드 후 URL 반환
-        if (downloadURL) {
-          alert('회원가입이 완료되었습니다.');
-        }
-      }
-    }
-  };
-
-  // 프로필 사진 선택
+  // 이미지 선택 함수
   const pickImage = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  
+    if (permissionResult.granted === false) {
+      alert('사진 접근 권한이 필요합니다!');
+      return;
+    }
+  
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
     });
-
-    if (!result.cancelled) {
-      setProfileImage(result.uri);  // 선택한 이미지 URI 설정
+  
+    if (!result.canceled) {
+      setProfileImage(result.assets[0].uri);  // 선택한 이미지의 URI를 설정
     }
   };
+  
+  
+    // MBTI 선택 함수
+    const handleMbtiSelect = (value) => {
+      setMbti(value);
+      setIsDropdownVisible(false);  // 선택 후 모달 닫기
+    };
+  
+    // 드롭다운 모달 열기/닫기 함수
+    const toggleDropdown = () => {
+      setIsDropdownVisible(!isDropdownVisible);  // 현재 상태를 토글
+    };
+    
 
-  // 백엔드 API를 통해 이미지 업로드
-  const uploadImageToBackend = async (imageUri) => {
-    try {
-      const response = await axios.post('http://<your-backend-url>/api/uploadProfileImage', {
-        imageUri: imageUri,
-      });
-      if (response.data.success) {
-        const downloadURL = response.data.downloadURL;
-        console.log('이미지 업로드 성공:', downloadURL);
-        return downloadURL;
+    const handleSubmit = async () => {
+      if (password !== confirmPassword) {
+        alert('비밀번호가 일치하지 않습니다. 다시 입력해주세요.');
       } else {
-        console.error('이미지 업로드 실패:', response.data.message);
+        if (profileImage) {
+          const formData = new FormData();
+          formData.append('file', {
+            uri: profileImage,
+            name: `profile_${Date.now()}.jpg`,
+            type: 'image/jpeg',
+          });
+    
+          try {
+            const response = await axios.post('http://192.168.0.53:5000/api/upload/uploadProfileImage', formData, {
+              headers: { 'Content-Type': 'multipart/form-data' },
+            });
+    
+            const downloadURL = response.data.downloadURL;
+            console.log('이미지 업로드 성공:', downloadURL);
+    
+            // 이후 서버로 사용자 정보 전송 로직 추가
+            alert('회원가입이 완료되었습니다.');
+          } catch (error) {
+            console.error('이미지 업로드 실패:', error);
+            alert('이미지 업로드 중 오류가 발생했습니다.');
+          }
+        }
       }
-    } catch (error) {
-      console.error('서버 오류:', error);
-    }
-  };
+    };
+    
+  
 
-  const toggleDropdown = () => setIsDropdownVisible(!isDropdownVisible);
 
-  const handleMbtiSelect = (value) => {
-    setMbti(value);
-    setIsDropdownVisible(false);
+  const uploadImageToFirebase = async (imageUri) => {
+    const response = await fetch(imageUri);
+    const blob = await response.blob();  // 이미지 파일을 Blob 형식으로 변환
+  
+    const storageRef = firebase.storage().ref().child(`profileImages/${Date.now()}`);  // Firebase 스토리지 참조 생성
+    const snapshot = await storageRef.put(blob);  // Blob을 Firebase에 업로드
+  
+    const downloadURL = await snapshot.ref.getDownloadURL();  // 다운로드 URL 얻기
+    return downloadURL;
   };
+  
 
   return (
     <ScrollView style={styles.scrollView} contentContainerStyle={styles.container}>
@@ -121,13 +149,12 @@ const StudentInfoScreen = ({ route }) => {
           style={styles.input}
         />
 
-        <Text style={styles.label}>MBTI</Text>
-        <TouchableOpacity style={styles.dropdown} onPress={toggleDropdown}>
-          <Text style={styles.dropdownText}>{mbti || 'MBTI 선택'}</Text>
-        </TouchableOpacity>
+<Text style={styles.label}>MBTI</Text>
+      <TouchableOpacity style={styles.dropdown} onPress={toggleDropdown}>
+        <Text style={styles.dropdownText}>{mbti || 'MBTI 선택'}</Text>
+      </TouchableOpacity>
 
-        {/* 드롭다운 모달 */}
-        <Modal visible={isDropdownVisible} transparent={true} animationType="fade">
+      <Modal visible={isDropdownVisible} transparent={true} animationType="fade">
           <TouchableOpacity style={styles.modalOverlay} onPress={toggleDropdown}>
             <View style={styles.dropdownMenu}>
               <ScrollView>
@@ -144,21 +171,20 @@ const StudentInfoScreen = ({ route }) => {
             </View>
           </TouchableOpacity>
         </Modal>
+        {/* 프로필 이미지 선택 */}
+        <Text style={styles.profileText}>프로필을 추가해볼까요</Text>
+        <TouchableOpacity onPress={pickImage} style={styles.profileImageContainer}>
+          {profileImage ? (
+            <Image source={{ uri: profileImage }} style={styles.profileImage} resizeMode="cover" />
+          ) : (
+            <Text style={styles.profilePlaceholderText}>press to select</Text>
+          )}
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={handleSubmit} style={styles.submitButton}>
+          <Text style={styles.submitButtonText}>완료</Text>
+        </TouchableOpacity>
       </View>
-
-      <Text style={styles.profileText}>프로필을 추가해볼까요</Text>
-
-      <TouchableOpacity onPress={pickImage} style={styles.profileImageContainer}>
-        {profileImage ? (
-          <Image source={{ uri: profileImage }} style={styles.profileImage} />
-        ) : (
-          <Text style={styles.profilePlaceholderText}>press to select</Text>
-        )}
-      </TouchableOpacity>
-
-      <TouchableOpacity onPress={handleSubmit} style={styles.submitButton}>
-        <Text style={styles.submitButtonText}>완료</Text>
-      </TouchableOpacity>
     </ScrollView>
   );
 };
@@ -213,27 +239,6 @@ const styles = StyleSheet.create({
   dropdownText: {
     fontSize: 16,
   },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-  },
-  dropdownMenu: {
-    width: '80%',
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 10,
-    maxHeight: 300,
-  },
-  dropdownItem: {
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-  },
-  dropdownItemText: {
-    fontSize: 16,
-  },
   profileText: {
     marginTop: 30,
     fontSize: 16,
@@ -269,7 +274,28 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 16,
   },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  dropdownMenu: {
+    width: '80%',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 10,
+    maxHeight: 300,
+  },
+  dropdownItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
+  dropdownItemText: {
+    fontSize: 16,
+  },
 });
 
+
 export default StudentInfoScreen;
-  

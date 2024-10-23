@@ -30,7 +30,7 @@ const SignupScreen = ({ navigation }) => {
   const handleOcr = async (base64Image) => {
     try {
       setIsProcessing(true); // OCR 요청 시작
-      const response = await axios.post('http://10.112.106.54:5000/api/ocr', { base64Image });
+      const response = await axios.post('http://192.168.0.53:5000/api/ocr', { base64Image });
       const extractedData = response.data.data;
       setOcrData(extractedData);
       setModalVisible(true); // OCR 데이터 확인을 위한 팝업 표시

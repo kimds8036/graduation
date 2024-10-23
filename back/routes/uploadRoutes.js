@@ -1,21 +1,35 @@
+// uploadRoute.js
 const express = require('express');
+const { bucket } = require('../firebaseAdmin');
+const multer = require('multer');  // 파일 업로드를 처리하기 위한 multer 라이브러리 사용
+
 const router = express.Router();
-const { storage } = require('../config/firebaseConfig'); // 백엔드에서 Firebase 설정 불러오기
+const upload = multer({ storage: multer.memoryStorage() });  // 메모리에서 파일 처리
 
-router.post('/uploadProfileImage', async (req, res) => {
+// 이미지 업로드 API
+router.post('/uploadProfileImage', upload.single('file'), async (req, res) => {
   try {
-    const { imageUri } = req.body;
-    const response = await fetch(imageUri);
-    const blob = await response.blob();
+    const file = req.file;
 
-    const imageName = `profileImages/${Date.now()}.jpg`;
-    const ref = storage.ref().child(imageName);
-    const snapshot = await ref.put(blob);
+    if (!file) {
+      return res.status(400).send('No file uploaded.');
+    }
 
-    const downloadURL = await snapshot.ref.getDownloadURL();
-    res.json({ success: true, downloadURL });
+    const blob = bucket.file(`profileImages/${Date.now()}_${file.originalname}`);
+    const blobStream = blob.createWriteStream();
+
+    blobStream.on('error', (err) => {
+      res.status(500).send({ error: 'Unable to upload image.' });
+    });
+
+    blobStream.on('finish', async () => {
+      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
+      res.status(200).send({ downloadURL: publicUrl });  // 업로드 후 URL 반환
+    });
+
+    blobStream.end(file.buffer);  // 업로드 프로세스 시작
   } catch (error) {
-    res.status(500).json({ success: false, message: '이미지 업로드 실패', error });
+    res.status(500).send({ error: 'Something went wrong.' });
   }
 });
 

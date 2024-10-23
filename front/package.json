@@ -28,6 +28,7 @@
     "react-native-dotenv": "^3.4.11",
     "react-native-geolocation-service": "^5.3.1",
     "react-native-gesture-handler": "~2.16.1",
+    "react-native-image-crop-picker": "^0.41.4",
     "react-native-keyboard-aware-scroll-view": "^0.9.5",
     "react-native-linear-gradient": "^2.8.3",
     "react-native-maps": "1.14.0",
