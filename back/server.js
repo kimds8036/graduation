@@ -10,7 +10,9 @@ dotenv.config();
 
 const app = express();
 app.use(cors());
-app.use(express.json()); // JSON 요청을 처리할 수 있게 설정
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
+ // JSON 요청을 처리할 수 있게 설정
 
 // MongoDB 연결
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })

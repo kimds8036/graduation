@@ -11,6 +11,7 @@ import WritePostScreen from './src/Writepostscreen.js';  // WritePostScreen impo
 import MapScreen from './src/MapScreen.js';  // MapScreen import
 import LoginScreen from './src/LoginScreen';  // LoginScreen import
 import SignupScreen from './src/SignupScreen';  // SignupScreen import
+import StudentInfoScreen from './src/StudentInfoScreen';  // StudentInfoScreen import
 
 // 각 화면 컴포넌트
 function ChatScreen() {
@@ -80,12 +81,14 @@ function TabNavigator() {
   );
 }
 
-// AuthStack: 로그인 및 회원가입 화면 관리
+// AuthStack: 로그인, 회원가입, StudentInfoScreen 화면 관리
 function AuthStack() {
   return (
     <Stack.Navigator>
       <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Signup" component={SignupScreen} options={{ headerShown: false }} />
+      {/* StudentInfoScreen을 추가 */}
+      <Stack.Screen name="StudentInfoScreen" component={StudentInfoScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }

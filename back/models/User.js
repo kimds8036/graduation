@@ -4,10 +4,12 @@ const bcrypt = require('bcryptjs');
 const userSchema = new mongoose.Schema({
   name: String,
   department: String,
-  studentId: { type: String, required: true, unique: true },  // 학번을 고유하게 설정
+  studentId: { type: String, required: true, unique: true },  // 학번 고유 필드
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  isAutoLogin: { type: Boolean, default: false }  // 자동 로그인 필드
+  mbti: { type: String },  // MBTI 필드 추가
+  profileImageUrl: { type: String },  // 프로필 이미지 URL 필드 추가
+  isAutoLogin: { type: Boolean, default: false }  // 자동 로그인 여부
 });
 
 // 비밀번호 해싱 미들웨어
