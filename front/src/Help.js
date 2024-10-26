@@ -8,15 +8,15 @@ function HelpScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* 상단 바 */}
+      
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.navigate('SettingsScreen')}> {/* SettingsScreen으로 이동 */}
+        <TouchableOpacity onPress={() => navigation.navigate('SettingsScreen')}> 
           <Ionicons name="arrow-back" size={24} color="black" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>도움말</Text>
       </View>
 
-      {/* 도움말 텍스트 */}
+      
       <View style={styles.content}>
         <Text style={styles.text}>
           환영합니다!{'\n'}

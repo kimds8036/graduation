@@ -31,7 +31,7 @@ function SettingsScreen() {
         <Text style={styles.headerTitle}>설정</Text>
       </View>
 
-      {/* 프로필 수정 */}
+      
       <TouchableOpacity 
         style={styles.settingItem} 
         onPress={() => navigation.navigate('ModifyProfile')}
@@ -40,7 +40,8 @@ function SettingsScreen() {
         <Text style={styles.settingText}>프로필 수정</Text>
       </TouchableOpacity>
 
-      {/* 푸시 알림 설정 */}
+
+      
       <TouchableOpacity 
         style={styles.settingItem} 
         onPress={() => navigation.navigate('Setpushnotification')}
@@ -49,7 +50,8 @@ function SettingsScreen() {
         <Text style={styles.settingText}>푸시 알림 설정</Text>
       </TouchableOpacity>
 
-      {/* 계정 관리 */}
+
+      
       <TouchableOpacity 
         style={styles.settingItem} 
         onPress={() => navigation.navigate('AccountManagement')}
@@ -58,7 +60,7 @@ function SettingsScreen() {
         <Text style={styles.settingText}>계정 관리</Text>
       </TouchableOpacity>
 
-      {/* 도움말 */}
+      
       <TouchableOpacity 
         style={styles.settingItem} 
         onPress={() => navigation.navigate('Help')}
@@ -67,7 +69,7 @@ function SettingsScreen() {
         <Text style={styles.settingText}>도움말</Text>
       </TouchableOpacity>
 
-      {/* 로그아웃 */}
+      
       <TouchableOpacity style={styles.settingItem} onPress={showLogoutAlert}>
         <Ionicons name="log-out-outline" size={24} color="black" />
         <Text style={styles.settingText}>로그아웃</Text>

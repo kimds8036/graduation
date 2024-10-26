@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import TopBar from './TopBar'; 
 import Slider from '@react-native-community/slider';
 import RNPickerSelect from 'react-native-picker-select'; // Wheel Picker
+import RowBar from './Rowbar';
 
 export default function PostCreationScreen() {
     const [selectedGender, setSelectedGender] = useState(''); 
@@ -158,6 +159,7 @@ export default function PostCreationScreen() {
                     />
                 </View>
             </KeyboardAwareScrollView>
+            <RowBar/>
         </SafeAreaView>
     );
 }

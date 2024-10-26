@@ -15,6 +15,17 @@ import ChatScreen from './src/ChatScreen'; // Chat 화면 추가
 import MapScreen from './src/MapScreen'; // Map 화면 추가
 import SaveRouteScreen from './src/SaveRouteScreen'; // SaveRoute 화면 추가
 import { NotificationProvider } from './src/NotificationContext'; // 추가
+import BoardScreen from './src/Boardscreen';
+import SettingsScreen from './src/SettingsScreen';
+import ModifyProfile from './src/ModifyProfile';
+import Setpushnotification from './src/Setpushnotification';
+import Help from './src/Help';
+import Writepostscreen from './src/Writepostscreen';
+
+
+
+
+
 
 
 
@@ -30,7 +41,16 @@ function HomeStack() {
       <Stack.Screen name="ChatScreen" component={ChatScreen} options={{ headerShown: false }} />
       <Stack.Screen name="MapScreen" component={MapScreen} options={{ headerShown: false }} />
       <Stack.Screen name="SaveRouteScreen" component={SaveRouteScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Matching1" component={Matching1} options={{ headerShown: false }} />
+      <Stack.Screen name="SettingsScreen" component={SettingsScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="ModifyProfile" component={ModifyProfile} options={{ headerShown: false }} />
+      <Stack.Screen name="Setpushnotification" component={Setpushnotification} options={{ headerShown: false }} />
+      <Stack.Screen name="Help" component={Help} options={{ headerShown: false }} />
+      <Stack.Screen name="Writepostscreen" component={Writepostscreen} options={{ headerShown: false }} />
+
       <Stack.Screen name="NotificationScreen" component={NotificationScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="BoardScreen" component={BoardScreen} options={{ headerShown: false }} />
+
     </Stack.Navigator>
   );
 }

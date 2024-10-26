@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView,SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import TopBar from './TopBar'; // TopBar를 import
+import RowBar from './Rowbar';
 
 
 
@@ -138,7 +139,7 @@ const MatchingPage = () => {
         <Text style={styles.matchButtonText}>매칭하기</Text>
         </TouchableOpacity>
         </ScrollView>
-    
+    <RowBar/>
   </SafeAreaView>
   );
 };

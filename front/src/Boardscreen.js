@@ -3,6 +3,7 @@ import { View, Text, TextInput, StyleSheet, TouchableOpacity, FlatList, SafeArea
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import TopBar from './TopBar';
+import RowBar from './Rowbar';
 
 // 게시글 더미 데이터
 const initialPosts = [
@@ -83,7 +84,7 @@ return (
         {/* 글쓰기 버튼 */}
         <TouchableOpacity 
           style={styles.writeButton}
-          onPress={() => navigation.navigate('WritePostScreen')}  // 'WritePostScreen'으로 이동
+          onPress={() => navigation.navigate('Writepostscreen')}  // 'WritePostScreen'으로 이동
         >
           <Text style={styles.writeButtonText}>글쓰기</Text>
         </TouchableOpacity>
@@ -98,7 +99,7 @@ return (
         onRefresh={fetchPosts}  // 새로고침 기능
         contentContainerStyle={{ paddingBottom: 20 }}
       />
-      
+      <RowBar/>
     </SafeAreaView>
   );
 }

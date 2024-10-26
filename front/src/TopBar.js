@@ -58,9 +58,10 @@ const TopBar = ({ setIsLoggedIn }) => {
         {unreadCount > 0 && <View style={styles.badge} />}
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={handleLogout}>
-        <Ionicons name="settings-outline" size={24} color="black" />
+      <TouchableOpacity onPress={() => navigation.navigate('SettingsScreen')}>
+      <Ionicons name="settings-outline" size={24} color="black" />
       </TouchableOpacity>
+
     </View>
   );
 };

@@ -55,8 +55,8 @@ function Homescreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>동선이 비슷한 친구들이에요</Text>
           <TouchableOpacity onPress={() => navigation.navigate('Matching1')}>
-            <Text style={styles.moreText}>더보기 &gt;</Text>
-          </TouchableOpacity>
+          <Text style={styles.moreText}>더보기 &gt;</Text>
+        </TouchableOpacity>
         </View>
 
  
@@ -86,6 +86,7 @@ function Homescreen() {
       <TouchableOpacity onPress={() => navigation.navigate('BoardScreen')}>
         <Text style={styles.moreText}>더보기 &gt;</Text>
       </TouchableOpacity>
+
     </View>
 
     <View style={styles.activityCard}>

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, Switch, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native'; // useNavigation 훅 추가
+import RowBar from './Rowbar';
 
 function NotificationSettingsScreen() {
   const navigation = useNavigation(); // 네비게이션 훅 사용
@@ -13,15 +14,15 @@ function NotificationSettingsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* 상단 바 */}
+      
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.navigate('SettingsScreen')}> {/* SettingsScreen으로 이동 */}
+        <TouchableOpacity onPress={() => navigation.navigate('SettingsScreen')}> 
           <Ionicons name="arrow-back" size={24} color="black" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>푸시 알림 설정</Text>
       </View>
 
-      {/* 전체 알림 */}
+      
       <View style={styles.switchRow}>
         <Text style={styles.label}>전체</Text>
         <Switch
@@ -33,7 +34,7 @@ function NotificationSettingsScreen() {
         />
       </View>
 
-      {/* 개별 알림 설정 */}
+      
       <View style={styles.switchRow}>
         <Text style={styles.label}>매칭 알림</Text>
         <Switch
@@ -77,6 +78,7 @@ function NotificationSettingsScreen() {
           value={serviceSwitch}
         />
       </View>
+      <RowBar/>
     </SafeAreaView>
   );
 }
