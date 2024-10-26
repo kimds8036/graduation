@@ -6,6 +6,11 @@ const dotenv = require('dotenv');
 const authRoutes = require('./routes/authRoutes');  // 로그인 및 회원가입 라우트
 const ocrRoutes = require('./routes/ocrRoutes');    // OCR 라우트
 const uploadRoutes = require('./routes/uploadRoutes');
+const userRoute = require('./routes/userRoutes'); 
+const notificationRoutes = require('./routes/notificationRoutes');
+
+
+
 
 
 dotenv.config();
@@ -37,8 +42,16 @@ app.use('/api/ocr', (req, res, next) => {
 app.use('/api/auth', authRoutes);  // 로그인 및 회원가입 라우트
 app.use('/api/ocr', ocrRoutes);    // OCR 라우트 연결
 app.use('/api/upload', uploadRoutes);
+app.use('/api/notifications', notificationRoutes);
+
+
+
+
+
+app.use('/api/users', userRoute);
 // 서버 실행
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`서버가 ${PORT}번 포트에서 실행 중입니다.`);
 });
+

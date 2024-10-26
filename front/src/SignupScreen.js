@@ -43,7 +43,7 @@ const SignupScreen = ({ navigation }) => {
 
   const handleOcrSuccess = () => {
     setModalVisible(false);
-    navigation.navigate('StudentInfoScreen', { extractedData: ocrData });
+    navigation.navigate('StudentInfo', { extractedData: ocrData });
   };
 
   const handleOcrRetry = () => {
@@ -121,12 +121,12 @@ const SignupScreen = ({ navigation }) => {
                 <Text>학번: {ocrData['학번']}</Text>
 
                 <View style={styles.modalButtons}>
-                  <TouchableOpacity onPress={handleOcrSuccess} style={styles.modalButton}>
-                    <Text style={styles.modalButtonText}>확인</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={handleOcrRetry} style={[styles.modalButton, styles.retryButton]}>
-                    <Text style={styles.modalButtonText}>다시 시도</Text>
-                  </TouchableOpacity>
+                <TouchableOpacity onPress={handleOcrSuccess} style={styles.modalButton}>
+                  <Text style={styles.modalButtonText}>확인</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleOcrRetry} style={[styles.modalButton, styles.retryButton]}>
+                  <Text style={styles.modalButtonText}>다시 시도</Text>
+                </TouchableOpacity>
                 </View>
               </>
             )}

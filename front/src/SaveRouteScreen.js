@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import * as Location from 'expo-location';
+import RowBar from './Rowbar';
 
 const SaveRouteScreen = () => {
   const [location, setLocation] = useState(null);
@@ -74,6 +75,7 @@ const SaveRouteScreen = () => {
           )}
         </View>
       )}
+      <RowBar/>
     </View>
   );
 };

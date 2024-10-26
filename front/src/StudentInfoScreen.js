@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Modal, StyleSheet, Image, ScrollView, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';  // Expo Image Picker 사용
 import axios from 'axios';
+import { useNavigation } from '@react-navigation/native';
 
 
 const MBTI_OPTIONS = [
@@ -33,7 +34,11 @@ const StudentInfoScreen = ({ route }) => {
   const [profileImage, setProfileImage] = useState(null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');  // 비밀번호 확인 상태
+  const [isPasswordMatch, setIsPasswordMatch] = useState(true);  // 비밀번호 일치 여부 상태
+  const [isConfirmPasswordTouched, setIsConfirmPasswordTouched] = useState(false);
+
+  const navigation = useNavigation();  // 네비게이션 훅 사용
 
   // 이미지 선택 함수
   const pickImage = async () => {
@@ -72,34 +77,61 @@ const StudentInfoScreen = ({ route }) => {
     const handleSubmit = async () => {
       if (password !== confirmPassword) {
         alert('비밀번호가 일치하지 않습니다. 다시 입력해주세요.');
-      } else {
-        if (profileImage) {
-          const formData = new FormData();
-          formData.append('file', {
-            uri: profileImage,
-            name: `profile_${Date.now()}.jpg`,
-            type: 'image/jpeg',
+        return;
+      }
+    
+      if (profileImage) {
+        const formData = new FormData();
+        formData.append('file', {
+          uri: profileImage,
+          name: `profile_${Date.now()}.jpg`,
+          type: 'image/jpeg',
+        });
+    
+        try {
+          // 1. Firebase Storage에 이미지 업로드
+          const imageResponse = await axios.post('http://192.168.0.53:5000/api/upload/uploadProfileImage', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
           });
+          const profileImageUrl = imageResponse.data.downloadURL;
+          console.log('이미지 업로드 성공:', profileImageUrl);
     
-          try {
-            const response = await axios.post('http://192.168.0.53:5000/api/upload/uploadProfileImage', formData, {
-              headers: { 'Content-Type': 'multipart/form-data' },
-            });
+          // 2. MongoDB에 사용자 정보 저장
+          const userData = {
+            name: extractedData['이름'],
+            username,
+            password,
+            department: extractedData['학과'],
+            studentId: extractedData['학번'],
+            mbti,
+            profileImageUrl,
+          };
     
-            const downloadURL = response.data.downloadURL;
-            console.log('이미지 업로드 성공:', downloadURL);
-    
-            // 이후 서버로 사용자 정보 전송 로직 추가
-            alert('회원가입이 완료되었습니다.');
-          } catch (error) {
-            console.error('이미지 업로드 실패:', error);
-            alert('이미지 업로드 중 오류가 발생했습니다.');
+          const response = await axios.post('http://192.168.0.53:5000/api/users/signup', userData);
+          console.log('회원가입 성공:', response.data);
+          alert('회원가입이 완료되었습니다.');
+          navigation.navigate('Login');
+        } catch (error) {
+          if (error.response && error.response.status === 400) {
+            // 백엔드에서 400 에러가 발생하면 팝업 표시
+            alert(error.response.data.error);  // 이미 생성된 계정이 있을 때의 에러 메시지 표시
+          } else {
+            console.error('회원가입 중 오류 발생:', error);
+            alert('회원가입 중 오류가 발생했습니다.');
           }
         }
       }
     };
     
+    
   
+// 비밀번호 확인 함수
+const handleConfirmPasswordChange = (text) => {
+  setConfirmPassword(text);
+  setIsPasswordMatch(password === text);  // 비밀번호와 일치 여부 확인
+  setIsConfirmPasswordTouched(true);  // 입력이 시작되면 상태 업데이트
+};
+
 
 
   const uploadImageToFirebase = async (imageUri) => {
@@ -143,11 +175,16 @@ const StudentInfoScreen = ({ route }) => {
         <Text>비밀번호 확인</Text>
         <TextInput
           value={confirmPassword}
-          onChangeText={setConfirmPassword}
+          onChangeText={handleConfirmPasswordChange}
           placeholder="비밀번호 확인"
           secureTextEntry
-          style={styles.input}
+          style={[
+            styles.input, 
+            isConfirmPasswordTouched && (isPasswordMatch ? styles.match : styles.noMatch)  // 입력 후에만 스타일 변경
+          ]}
         />
+
+
 
 <Text style={styles.label}>MBTI</Text>
       <TouchableOpacity style={styles.dropdown} onPress={toggleDropdown}>
@@ -201,6 +238,20 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 50,
     backgroundColor: '#fff',
+  },
+  input: {
+    width: '100%',
+    padding: 8,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    marginBottom: 16,
+    borderRadius: 5,
+  },
+  match: {
+    borderColor: 'green',  // 비밀번호가 일치할 때의 테두리 색상
+  },
+  noMatch: {
+    borderColor: 'red',  // 비밀번호가 일치하지 않을 때의 테두리 색상
   },
   title: {
     fontSize: 22,

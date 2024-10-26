@@ -3,6 +3,7 @@ import React from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
 import { useNavigation } from '@react-navigation/native'; // Navigation hook import
 import TopBar from './TopBar';
+import RowBar from './Rowbar';
 
 const chatData = [
   {
@@ -66,6 +67,7 @@ const ChatScreen = () => {
         keyExtractor={(item) => item.id}
         style={styles.chatList}
       />
+      <RowBar/>
     </SafeAreaView>
   );
 };

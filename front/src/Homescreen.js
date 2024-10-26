@@ -1,10 +1,9 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, SafeAreaView } from 'react-native';
-import TopBar from './TopBar'; // TopBar를 import
-import { useNavigation } from '@react-navigation/native'; // navigation 추가
-import Matching1 from './Matching1'; // 경로 수정
-import BoardScreen from './Boardscreen';
-
+import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, SafeAreaView, Alert } from 'react-native';
+import TopBar from './TopBar';
+import { useNavigation } from '@react-navigation/native';
+import axios from 'axios';
+import Rowbar from './Rowbar';
 
 const users = [
   {
@@ -31,12 +30,27 @@ const users = [
 ];
 
 function Homescreen() {
-  const navigation = useNavigation(); // navigation hook 사용
+  const navigation = useNavigation();
+
+  const sendInterestNotification = async (recipientId) => {
+    try {
+      const senderId = '현재 로그인된 사용자 ID'; // 실제로 로그인된 사용자 ID 가져오기
+      const message = '관심을 표현했습니다!';
+
+      await axios.post('http://192.168.0.53:5000/api/notifications/send-interest', {
+        senderId,
+        recipientId,
+        message,
+      });
+      Alert.alert('알림 전송 성공', '관심 알림이 전송되었습니다.');
+    } catch (error) {
+      Alert.alert('알림 전송 실패', '관심 알림 전송에 실패했습니다.');
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <TopBar />
-      
+      <TopBar/>
       <ScrollView style={styles.container}>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>동선이 비슷한 친구들이에요</Text>
@@ -45,49 +59,55 @@ function Homescreen() {
           </TouchableOpacity>
         </View>
 
-        {/* 유저 목록 */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.userContainer}>
-          {users.map((user, index) => (
-            <View key={index} style={styles.userCard}>
-              <Image source={{ uri: user.image }} style={styles.userImage} />
-              <TouchableOpacity style={styles.heartButton}>
-                <Text>❤️</Text>
-              </TouchableOpacity>
-              <View style={styles.userInfo}>
-                <Text style={styles.userName}>{user.name}</Text>
-                <Text>{user.gender} | {user.mbti}</Text>
-                <Text>{user.match}</Text>
-              </View>
-            </View>
-          ))}
-        </ScrollView>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>함께 할 친구를 찾고있어요</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Boardscreen')}>
-            <Text style={styles.moreText}>더보기 &gt;</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.activityCard}>
-          <Image
-            source={{ uri: 'https://source.unsplash.com/random/400x200?activity' }}
-            style={styles.activityImage}
-          />
-          <View style={styles.overlay} /> 
-          <View style={styles.activityInfo}>
-            <View style={styles.textContainer}>
-              <Text style={styles.activityTitle}>단원동 혼밥 탈출</Text>
-              <Text style={styles.activityDetails}>성별 무관 / 학과 무관 / 19:00</Text>
-            </View>
-            <TouchableOpacity style={styles.likeButton}>
-              <Text>👍 17</Text>
+ 
+    <View style={styles.userContainer}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        {users.map((user, index) => (
+          <View key={index} style={styles.userCard}>
+            <Image source={{ uri: user.image }} style={styles.userImage} />
+            <TouchableOpacity
+              style={styles.heartButton}
+              onPress={() => sendInterestNotification(user.id)}
+            >
+              <Text>❤️</Text>
             </TouchableOpacity>
+            <View style={styles.userInfo}>
+              <Text style={styles.userName}>{user.name}</Text>
+              <Text>{user.gender} | {user.mbti}</Text>
+              <Text>{user.match}</Text>
+            </View>
           </View>
-        </View>
+        ))}
       </ScrollView>
-      
-    </SafeAreaView>
+    </View>
+
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>함께 할 친구를 찾고있어요</Text>
+      <TouchableOpacity onPress={() => navigation.navigate('BoardScreen')}>
+        <Text style={styles.moreText}>더보기 &gt;</Text>
+      </TouchableOpacity>
+    </View>
+
+    <View style={styles.activityCard}>
+      <Image
+        source={{ uri: 'https://source.unsplash.com/random/400x200?activity' }}
+        style={styles.activityImage}
+      />
+      <View style={styles.overlay} />
+      <View style={styles.activityInfo}>
+        <View style={styles.textContainer}>
+          <Text style={styles.activityTitle}>단원동 혼밥 탈출</Text>
+          <Text style={styles.activityDetails}>성별 무관 / 학과 무관 / 19:00</Text>
+        </View>
+        <TouchableOpacity style={styles.likeButton}>
+          <Text>👍 17</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </ScrollView>
+  <Rowbar/>
+</SafeAreaView>
+
   );
 }
 
@@ -95,11 +115,10 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#fff',
-    
   },
   container: {
     flex: 1,
-    paddingHorizontal: 13,  // 좌우 여백을 동일하게 설정
+    paddingHorizontal: 13,
     paddingVertical: 10,
   },
   section: {
@@ -195,4 +214,3 @@ const styles = StyleSheet.create({
 });
 
 export default Homescreen;
-

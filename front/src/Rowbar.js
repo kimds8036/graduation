@@ -1,51 +1,57 @@
-// src/Rowbar.js
 import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Homescreen from './Homescreen';
-import ChatStack from './ChatStack';
-import MapScreen from './MapScreen';
-import SaveRouteScreen from './SaveRouteScreen';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
-const Tab = createBottomTabNavigator();
+// 네비게이션 객체가 없는 경우 기본 동작 설정
+function RowBar() {
+  const navigation = useNavigation() || { navigate: () => {} }; // 네비게이션이 없을 경우 빈 함수 처리
+  const route = useRoute() || { name: '' }; // 라우트가 없을 경우 기본 값
 
-function Rowbar() {
-  // 각 컴포넌트가 제대로 불러와졌는지 확인
-  if (!Homescreen || !ChatStack || !MapScreen || !SaveRouteScreen) {
-    console.error("One or more components are undefined. Please check imports.");
-    return null; // 컴포넌트가 undefined인 경우 빈 화면 반환
-  }
+  const TabButton = ({ name, label, icon }) => {
+    const isActive = route.name === name; // 현재 활성화된 탭 확인
+    return (
+      <TouchableOpacity onPress={() => navigation.navigate(name)} style={styles.tabButton}>
+        <Ionicons
+          name={icon}
+          size={24}
+          color={isActive ? 'tomato' : 'gray'} // 활성화된 탭이면 'tomato' 색상 적용
+        />
+        <Text style={[styles.label, isActive && styles.activeLabel]}>{label}</Text>
+      </TouchableOpacity>
+    );
+  };
 
   return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ color, size }) => {
-          let iconName;
-
-          if (route.name === 'Home') {
-            iconName = 'home-outline';
-          } else if (route.name === 'Chat') {
-            iconName = 'chatbubble-outline';
-          } else if (route.name === 'Map') {
-            iconName = 'map-outline';
-          } else if (route.name === 'SaveRoute') {
-            iconName = 'save-outline';
-          }
-
-          return <Ionicons name={iconName} size={size} color={color} />;
-        },
-        tabBarActiveTintColor: 'tomato',
-        tabBarInactiveTintColor: 'gray',
-        headerShown: false,
-      })}
-    >
-      <Tab.Screen name="Home" component={Homescreen} />
-      <Tab.Screen name="Chat" component={ChatStack} />
-      <Tab.Screen name="Map" component={MapScreen} />
-      <Tab.Screen name="SaveRoute" component={SaveRouteScreen} />
-    </Tab.Navigator>
+    <View style={styles.tabContainer}>
+      <TabButton name="Homescreen" label="Home" icon="home-outline" />
+      <TabButton name="ChatScreen" label="Chat" icon="chatbubble-outline" />
+      <TabButton name="MapScreen" label="Map" icon="map-outline" />
+      <TabButton name="SaveRouteScreen" label="Save" icon="save-outline" />
+    </View>
   );
 }
 
-export default Rowbar;
+const styles = StyleSheet.create({
+  tabContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 10,
+    paddingBottom: 5,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#ccc',
+  },
+  tabButton: {
+    alignItems: 'center',
+  },
+  label: {
+    fontSize: 12,
+    color: 'gray',
+  },
+  activeLabel: {
+    color: 'tomato',
+  },
+});
+
+export default RowBar;

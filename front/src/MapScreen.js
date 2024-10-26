@@ -3,6 +3,8 @@ import { StyleSheet, View, Dimensions, TouchableOpacity, Image, Alert } from 're
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
+import Rowbar from './Rowbar';
+import { SafeAreaView } from 'react-native-safe-area-context'; // SafeAreaView를 하단바 영역에만 사용
 
 export default function App() {
   const [location, setLocation] = useState(null);
@@ -83,6 +85,10 @@ export default function App() {
       <TouchableOpacity style={styles.locationButton} onPress={goToCurrentLocation}>
         <Ionicons name="compass-outline" size={22} color="black" />
       </TouchableOpacity>
+      
+      <SafeAreaView style={styles.bottomArea}> 
+        <Rowbar />
+      </SafeAreaView>
     </View>
   );
 }
@@ -90,8 +96,6 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   map: {
     width: Dimensions.get('window').width,
@@ -99,7 +103,7 @@ const styles = StyleSheet.create({
   },
   locationButton: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 80, // Rowbar 위로 버튼이 올라가게 조정
     right: 20,
     backgroundColor: '#fff',
     padding: 10,
@@ -113,5 +117,10 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  bottomArea: {
+    backgroundColor: '#fff', // 하단바 배경색
+    paddingBottom: 20, // 하단 여백 추가
+    flex: 0,  // 하단바가 원하는 높이로만 그려지도록 설정
   },
 });
