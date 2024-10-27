@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Modal, StyleSheet, Image, ScrollView, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Modal, StyleSheet, Image, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';  // Expo Image Picker 사용
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
@@ -34,9 +34,10 @@ const StudentInfoScreen = ({ route }) => {
   const [profileImage, setProfileImage] = useState(null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');  // 비밀번호 확인 상태
-  const [isPasswordMatch, setIsPasswordMatch] = useState(true);  // 비밀번호 일치 여부 상태
-  const [isConfirmPasswordTouched, setIsConfirmPasswordTouched] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isPasswordMatch, setIsPasswordMatch] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false); // 회원가입 중인지 상태 관리
+  const [isModalVisible, setIsModalVisible] = useState(false); // Modal 상태 관리
 
   const navigation = useNavigation();  // 네비게이션 훅 사용
 
@@ -80,6 +81,9 @@ const StudentInfoScreen = ({ route }) => {
         return;
       }
     
+
+      setIsSubmitting(true); // 회원가입 중 상태 설정
+      setIsModalVisible(true); // Modal 표시
       if (profileImage) {
         const formData = new FormData();
         formData.append('file', {
@@ -109,9 +113,13 @@ const StudentInfoScreen = ({ route }) => {
     
           const response = await axios.post('http://192.168.0.53:5000/api/auth/signup', userData);
           console.log('회원가입 성공:', response.data);
+          setIsSubmitting(false); // 회원가입 완료 상태로 변경
+          setIsModalVisible(false); // Modal 닫기
           alert('회원가입이 완료되었습니다.');
           navigation.navigate('Login');
         } catch (error) {
+          setIsSubmitting(false);
+          setIsModalVisible(false); // Modal 닫기
           if (error.response && error.response.status === 400) {
             // 백엔드에서 400 에러가 발생하면 팝업 표시
             alert(error.response.data.error);  // 이미 생성된 계정이 있을 때의 에러 메시지 표시
@@ -126,11 +134,12 @@ const StudentInfoScreen = ({ route }) => {
     
   
 // 비밀번호 확인 함수
+// 비밀번호 확인 함수 (수정 후)
 const handleConfirmPasswordChange = (text) => {
   setConfirmPassword(text);
-  setIsPasswordMatch(password === text);  // 비밀번호와 일치 여부 확인
-  setIsConfirmPasswordTouched(true);  // 입력이 시작되면 상태 업데이트
+  setIsPasswordMatch(password === text);  // 비밀번호와 일치 여부만 확인
 };
+
 
 
 
@@ -180,7 +189,7 @@ const handleConfirmPasswordChange = (text) => {
           secureTextEntry
           style={[
             styles.input, 
-            isConfirmPasswordTouched && (isPasswordMatch ? styles.match : styles.noMatch)  // 입력 후에만 스타일 변경
+            confirmPassword && (isPasswordMatch ? styles.match : styles.noMatch)
           ]}
         />
 
@@ -222,6 +231,15 @@ const handleConfirmPasswordChange = (text) => {
           <Text style={styles.submitButtonText}>완료</Text>
         </TouchableOpacity>
       </View>
+      {/* 회원가입 중일 때 모달 표시 */}
+      <Modal visible={isModalVisible} transparent={true} animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <ActivityIndicator size="large" color="#007BFF" />
+            <Text style={styles.modalText}>회원가입 중입니다...</Text>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 };

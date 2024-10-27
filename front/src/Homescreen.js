@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, SafeAreaView, Alert, RefreshControl } from 'react-native';
+import { ImageBackground, View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, SafeAreaView, Alert, RefreshControl } from 'react-native';
 import TopBar from './TopBar';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import Rowbar from './Rowbar';
 import AsyncStorage from '@react-native-async-storage/async-storage'; // 올바른 경로에서 가져오기
+import FastImage from 'react-native-fast-image';
+
+
 
 function Homescreen() {
   const [users, setUsers] = useState([]); // 전체 사용자 데이터
@@ -17,6 +20,7 @@ function Homescreen() {
     try {
       const currentUserId = await AsyncStorage.getItem('_id'); // 로그인한 사용자 ID 가져오기
       const response = await axios.get('http://192.168.0.53:5000/api/users/users');
+      console.log('API Response:', response.data);
       const filteredUsers = response.data.filter(user => user._id !== currentUserId); // 자신 제외
       if (filteredUsers.length < 4) {
         setRandomUsers(filteredUsers); // 사용자가 4명보다 적으면 모두 표시
@@ -31,11 +35,20 @@ function Homescreen() {
 
   // 새로고침 핸들러
   const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchUsers(); // 사용자 데이터를 다시 가져옴
-    setRefreshing(false);
+    setRefreshing(true); // 새로고침 시작
+  
+    try {
+      await fetchUsers(); // 사용자 데이터를 다시 가져옴
+      
+      // 새로고침을 조금 더 길게 유지하여 로딩이 완료되도록 함
+      await new Promise(resolve => setTimeout(resolve, 1500)); // 1.5초 대기 (시간을 조정할 수 있음)
+      
+    } catch (error) {
+      console.error("새로고침 중 오류:", error);
+    } finally {
+      setRefreshing(false); // 새로고침 상태를 종료
+    }
   };
-
   // 컴포넌트가 처음 마운트될 때 사용자 데이터를 가져옴
   useEffect(() => {
     fetchUsers(); // 컴포넌트 마운트 시 데이터 로드
@@ -78,29 +91,35 @@ function Homescreen() {
         </View>
 
         <View style={styles.userContainer}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {randomUsers.map((user, index) => (
-              <View key={index} style={styles.userCard}>
-                {/* 사용자 프로필 사진 */}
-                <Image source={{ uri: user.profileImageUrl }} style={styles.userImage} />
+  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+    {randomUsers.map((user, index) => (
+      <View key={index} style={styles.userCard}>
+        {/** 로그 추가: 각 사용자의 프로필 이미지 URL 출력 */}
+        {console.log(`User ${index} profileImageUrl:`, user.profileImageUrl)}
 
-                {/* 하트 버튼, 사용자에게 관심 신호 보내기 */}
-                <TouchableOpacity
-                  style={styles.heartButton}
-                  onPress={() => sendInterestNotification(user._id)}
-                >
-                  <Text>❤️</Text>
-                </TouchableOpacity>
+        <ImageBackground
+          source={{ uri: user.profileImageUrl }}
+          style={styles.userImage}
+          imageStyle={styles.imageBackgroundStyle}  // 이미지 스타일
+        >
+          <TouchableOpacity
+            style={styles.heartButton}
+            onPress={() => sendInterestNotification(user._id)}
+          >
+            <Text>❤️</Text>
+          </TouchableOpacity>
 
-                {/* 사용자 정보 표시 (이름, 학과, MBTI) */}
-                <View style={styles.userInfo}>
-                  <Text style={styles.userName}>{user.name}</Text>
-                  <Text>{user.department} | {user.mbti}</Text>
-                </View>
-              </View>
-            ))}
-          </ScrollView>
-        </View>
+          <View style={styles.userInfo}>
+            <Text style={styles.userName}>{user.name}</Text> 
+            <Text style={styles.userDepartment}>{user.department}</Text> 
+            <Text style={styles.userMbti}>{user.mbti}</Text> 
+          </View>
+        </ImageBackground>
+      </View>
+    ))}
+  </ScrollView>
+</View>
+
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>함께 할 친구를 찾고있어요</Text>
@@ -155,35 +174,53 @@ const styles = StyleSheet.create({
     color: '#007AFF',
   },
   userContainer: {
-    flexDirection: 'row',
-    marginBottom: 20,
+    padding: 1,
   },
   userCard: {
-    width: 120,
-    marginRight: 15,
-    borderRadius: 10,
-    overflow: 'hidden',
-    backgroundColor: '#f0f0f0',
-    position: 'relative',
+    width: 150,
+    height: 200,
+    marginHorizontal: 10,
+    borderRadius: 15,
+    overflow: 'hidden', // 카드 안에서 이미지와 텍스트가 넘치지 않도록 설정
+    backgroundColor: '#f0f0f0', // 카드의 기본 배경색
   },
   userImage: {
     width: '100%',
-    height: 100,
+    height: '100%',
+    justifyContent: 'flex-end', // 이미지 하단에 정보가 표시되도록 설정
+  },
+  imageBackgroundStyle: {
+    borderRadius: 15, // 이미지에 둥근 모서리 적용
   },
   heartButton: {
     position: 'absolute',
-    top: 8,
-    right: 8,
+    top: 10,
+    right: 10,
+    backgroundColor: 'white',
+    borderRadius: 20,
     padding: 5,
-    backgroundColor: 'rgba(255,255,255,0.8)',
-    borderRadius: 15,
   },
   userInfo: {
-    padding: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)', // 투명한 흰색 배경
+    padding: 10,
+    borderRadius: 10,
+    height: 60,
+    justifyContent: 'center',
   },
   userName: {
+    fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 2,
+    
+    marginBottom: 2, // 아래에 여백 추가
+  },
+  userDepartment: {
+    fontSize: 14,
+    
+    marginBottom: 2, // 아래에 여백 추가
+  },
+  userMbti: {
+    fontSize: 14,
+    
   },
   activityCard: {
     marginVertical: 20,

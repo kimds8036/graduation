@@ -62,10 +62,13 @@ exports.sendMatchRequest = async (req, res) => {
 // 사용자 목록 조회 (홈 화면용)
 exports.getUsers = async (req, res) => {
   try {
-    // 모든 사용자 데이터를 반환
-    const users = await User.find().select('name department profilePicture mbti');
-    res.json(users);
+    // 필요한 필드 (name, department, mbti, profileImageUrl)만 선택해서 가져옴
+    const users = await User.find({}, 'name department mbti profileImageUrl');
+    
+    // 사용자 데이터를 클라이언트로 전송
+    res.status(200).json(users);
   } catch (error) {
-    res.status(500).json({ message: '사용자 목록을 가져오는 중 오류가 발생했습니다.' });
+    console.error('사용자 데이터를 가져오는 중 오류 발생:', error);
+    res.status(500).json({ error: '사용자 데이터를 가져오는 중 오류 발생' });
   }
 };
