@@ -20,6 +20,7 @@ import ModifyProfile from './src/ModifyProfile';
 import Setpushnotification from './src/Setpushnotification';
 import Help from './src/Help';
 import Writepostscreen from './src/Writepostscreen';
+import ProfileDetailScreen from './src/ProfileDetailScreen';
 
 const Stack = createStackNavigator();
 
@@ -39,6 +40,7 @@ function HomeStack() {
       <Stack.Screen name="Writepostscreen" component={Writepostscreen} options={{ headerShown: false }} />
       <Stack.Screen name="NotificationScreen" component={NotificationScreen} options={{ headerShown: false }} />
       <Stack.Screen name="BoardScreen" component={BoardScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="ProfileDetailScreen" component={ProfileDetailScreen} options={{ headerShown: false }} />
       <Stack.Screen name="AuthStack" component={AuthStack} options={{ headerShown: false }} />
     </Stack.Navigator>
   );

@@ -5,7 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import Rowbar from './Rowbar';
 import AsyncStorage from '@react-native-async-storage/async-storage'; // 올바른 경로에서 가져오기
-import FastImage from 'react-native-fast-image';
+
 
 
 
@@ -14,7 +14,15 @@ function Homescreen() {
   const [randomUsers, setRandomUsers] = useState([]); // 랜덤으로 선택된 사용자
   const [refreshing, setRefreshing] = useState(false); // 새로고침 상태 관리
   const navigation = useNavigation();
+  
+  
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      fetchUsers(); // 10분마다 자동 새로고침
+    }, 600000); // 10분 = 600,000 milliseconds
 
+    return () => clearInterval(intervalId); // 컴포넌트가 언마운트될 때 타이머 해제
+  }, []);
   // API에서 사용자 데이터를 가져오는 함수
   const fetchUsers = async () => {
     try {
@@ -33,22 +41,7 @@ function Homescreen() {
     }
   };
 
-  // 새로고침 핸들러
-  const onRefresh = async () => {
-    setRefreshing(true); // 새로고침 시작
-  
-    try {
-      await fetchUsers(); // 사용자 데이터를 다시 가져옴
-      
-      // 새로고침을 조금 더 길게 유지하여 로딩이 완료되도록 함
-      await new Promise(resolve => setTimeout(resolve, 1500)); // 1.5초 대기 (시간을 조정할 수 있음)
-      
-    } catch (error) {
-      console.error("새로고침 중 오류:", error);
-    } finally {
-      setRefreshing(false); // 새로고침 상태를 종료
-    }
-  };
+
   // 컴포넌트가 처음 마운트될 때 사용자 데이터를 가져옴
   useEffect(() => {
     fetchUsers(); // 컴포넌트 마운트 시 데이터 로드
@@ -76,49 +69,56 @@ function Homescreen() {
     }
   };
 
+  const handleUserCardPress = (user) => {
+    // 상세 화면으로 사용자 데이터 전달하며 이동
+    navigation.navigate('ProfileDetailScreen', { user });
+  };
   return (
     <SafeAreaView style={styles.safeArea}>
-      <TopBar />
-      <ScrollView
-        style={styles.container}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />} // 새로고침 기능 추가
-      >
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>동선이 비슷한 친구들이에요</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Matching1')}>
-            <Text style={styles.moreText}>더보기 &gt;</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.userContainer}>
-  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-    {randomUsers.map((user, index) => (
-      <View key={index} style={styles.userCard}>
-        {/** 로그 추가: 각 사용자의 프로필 이미지 URL 출력 */}
-        {console.log(`User ${index} profileImageUrl:`, user.profileImageUrl)}
-
-        <ImageBackground
-          source={{ uri: user.profileImageUrl }}
-          style={styles.userImage}
-          imageStyle={styles.imageBackgroundStyle}  // 이미지 스타일
-        >
-          <TouchableOpacity
-            style={styles.heartButton}
-            onPress={() => sendInterestNotification(user._id)}
+          <TopBar />
+          <ScrollView
+            style={styles.container}
           >
-            <Text>❤️</Text>
-          </TouchableOpacity>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>동선이 비슷한 친구들이에요</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Matching1')}>
+                <Text style={styles.moreText}>더보기 &gt;</Text>
+              </TouchableOpacity>
+            </View>
 
-          <View style={styles.userInfo}>
-            <Text style={styles.userName}>{user.name}</Text> 
-            <Text style={styles.userDepartment}>{user.department}</Text> 
-            <Text style={styles.userMbti}>{user.mbti}</Text> 
-          </View>
-        </ImageBackground>
-      </View>
-    ))}
-  </ScrollView>
-</View>
+            <View style={styles.userContainer}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {randomUsers.map((user, index) => (
+              <TouchableOpacity
+                key={index}
+                onPress={() => navigation.navigate('ProfileDetailScreen', { user })} // 사용자 카드 터치 시 상세 화면으로 이동
+              >
+                <View style={styles.userCard}>
+                  {console.log(`User ${index} profileImageUrl:`, user.profileImageUrl)}
+
+                  <ImageBackground
+                    source={{ uri: user.profileImageUrl }}
+                    style={styles.userImage}
+                    imageStyle={styles.imageBackgroundStyle}  // 이미지 스타일
+                  >
+                    <TouchableOpacity
+                      style={styles.heartButton}
+                      onPress={() => sendInterestNotification(user._id)}
+                    >
+                      <Text>❤️</Text>
+                    </TouchableOpacity>
+
+                    <View style={styles.userInfo}>
+                      <Text style={styles.userName}>{user.name}</Text> 
+                      <Text style={styles.userDepartment}>{user.department}</Text> 
+                      <Text style={styles.userMbti}>{user.mbti}</Text> 
+                    </View>
+                  </ImageBackground>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
 
 
         <View style={styles.section}>
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
     padding: 5,
   },
   userInfo: {
-    backgroundColor: 'rgba(255, 255, 255, 0.8)', // 투명한 흰색 배경
+    backgroundColor: 'rgba(255, 255, 255, 0.9)', // 투명한 흰색 배경
     padding: 10,
     borderRadius: 10,
     height: 60,
