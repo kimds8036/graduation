@@ -2,10 +2,10 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
-  name: String,
-  department: String,
+  name: { type: String },
+  department: { type: String, required: true },
   studentId: { type: String, required: true, unique: true },  // 학번 고유 필드
-  id: { type: String, required: true, unique: true },
+  username: { type: String, required: true}, 
   password: { type: String, required: true },
   mbti: { type: String },  // MBTI 필드 추가
   profileImageUrl: { type: String },  // 프로필 이미지 URL 필드 추가

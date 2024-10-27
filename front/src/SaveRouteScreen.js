@@ -1,86 +1,153 @@
-// src/SaveRouteScreen.js
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, SafeAreaView, ActivityIndicator } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage'; 
+import axios from 'axios';
 import * as Location from 'expo-location';
-import RowBar from './Rowbar';
+import RowBar from './Rowbar'; // 경로는 프로젝트에 맞게 수정
 
 const SaveRouteScreen = () => {
-  const [location, setLocation] = useState(null);
   const [tracking, setTracking] = useState(false);
-  const [startTime, setStartTime] = useState(null);
-  const [elapsedTime, setElapsedTime] = useState(0);
+  const [loading, setLoading] = useState(false);
 
-  // 위치 권한 요청
   useEffect(() => {
-    (async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('위치 권한이 필요합니다.');
-        return;
+    const checkTrackingStatus = async () => {
+      const isTracking = await AsyncStorage.getItem('isTracking');
+      if (isTracking === 'true') {
+        setTracking(true);
       }
-    })();
+    };
+    checkTrackingStatus();
   }, []);
 
-  // 트래킹 시작 시 위치와 시간을 추적
-  useEffect(() => {
-    let interval;
-    if (tracking) {
-      setStartTime(Date.now());
-      interval = setInterval(async () => {
-        let currentLocation = await Location.getCurrentPositionAsync({});
-        setLocation(currentLocation.coords);
-        setElapsedTime(Math.floor((Date.now() - startTime) / 1000)); // 경과 시간 업데이트
-      }, 1000); // 1초 간격으로 위치와 시간을 업데이트
-    } else {
-      clearInterval(interval);
-      setElapsedTime(0);
-      setLocation(null);
+  const startTracking = async () => {
+    setLoading(true);
+
+    const storedId = await AsyncStorage.getItem('_id');
+    if (!storedId) {
+      Alert.alert('로그인 정보가 없습니다.');
+      setLoading(false);
+      return;
     }
 
-    return () => clearInterval(interval);
-  }, [tracking]);
+    Alert.alert('동선 추적을 시작합니다!', '동선 추적은 앱이 활성화된 동안에만 작동합니다.');
 
-  const handleTracking = () => {
-    setTracking((prev) => !prev); // 트래킹 상태 변경
+    try {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('위치 접근 권한이 필요합니다.');
+        setLoading(false);
+        return;
+      }
+
+      // 현재 위치 가져오기
+      let currentLocation = await Location.getCurrentPositionAsync({});
+      await axios.post('http://192.168.0.53:5000/api/tracking/start-tracking', {
+        userId: storedId,
+        location: {
+          latitude: currentLocation.coords.latitude,
+          longitude: currentLocation.coords.longitude,
+        },
+        day: new Date().toLocaleDateString('ko-KR', { weekday: 'long' }),
+        timestamp: new Date().toISOString(),
+      });
+
+      await AsyncStorage.setItem('isTracking', 'true');
+      setTracking(true);
+
+      // 포그라운드에서 위치 추적 시작
+      Location.watchPositionAsync({
+        accuracy: Location.Accuracy.High,
+        timeInterval: 5000,  // 5초마다 업데이트
+        distanceInterval: 50, // 50미터마다 업데이트
+      }, (location) => {
+        // 위치 정보 서버로 전송
+        axios.post('http://192.168.0.53:5000/api/tracking/update-tracking', {
+          userId: storedId,
+          location: {
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+          },
+          day: new Date().toLocaleDateString('ko-KR', { weekday: 'long' }),
+          timestamp: new Date().toISOString(),
+        });
+      });
+
+    } catch (error) {
+      console.error('동선 추적 시작 중 오류:', error);
+      Alert.alert('동선 추적 시작 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const stopTracking = async () => {
+    const storedId = await AsyncStorage.getItem('_id');
+    if (!storedId) {
+      Alert.alert('로그인 정보가 없습니다.');
+      return;
+    }
+
+    try {
+      let currentLocation = await Location.getCurrentPositionAsync({});
+
+      // 서버에 동선 추적 중단 요청, 현재 위치 데이터 포함
+      await axios.post('http://192.168.0.53:5000/api/tracking/stop-tracking', {
+        userId: storedId,
+        location: {
+          latitude: currentLocation.coords.latitude,
+          longitude: currentLocation.coords.longitude,
+        },
+        day: new Date().toLocaleDateString('ko-KR', { weekday: 'long' }),
+        timestamp: new Date().toISOString(),
+      });
+
+      await AsyncStorage.setItem('isTracking', 'false');
+      setTracking(false);
+
+      Alert.alert('동선 추적이 중단되었습니다.');
+    } catch (error) {
+      console.error('동선 추적 중단 중 오류:', error);
+      Alert.alert('동선 추적 중단 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleTrackingToggle = () => {
+    if (tracking) {
+      Alert.alert('동선 추적 취소', '동선 추적을 중단하시겠습니까?', [
+        { text: '취소', style: 'cancel' },
+        { text: '확인', onPress: stopTracking },
+      ]);
+    } else {
+      startTracking();
+    }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>나의 활동 반경을 알아볼까요?</Text>
-      <Text style={styles.subtitle}>위치 정보 이용 동의를 해주세요!</Text>
-      
-      <View style={styles.iconContainer}>
-        {/* 아이콘 부분 */}
-        <Text style={styles.icon}>↕️</Text>
-        <Text style={styles.icon}>~</Text>
-        <Text style={styles.icon}>↕️</Text>
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <Text style={styles.title}>나의 활동 반경을 알아볼까요?</Text>
 
-      <View style={styles.mapIconContainer}>
-        {/* 지도 아이콘 */}
-        <Text style={styles.mapIcon}>🗺️</Text>
-      </View>
+        <TouchableOpacity style={styles.button} onPress={handleTrackingToggle}>
+          <Text style={styles.buttonText}>{tracking ? '동선 추적 중단하기' : '동선 추적하기'}</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button} onPress={handleTracking}>
-        <Text style={styles.buttonText}>{tracking ? '추적 중지하기' : '동선 추적하기'}</Text>
-      </TouchableOpacity>
-
-      {tracking && (
-        <View style={styles.infoContainer}>
-          <Text style={styles.infoText}>경과 시간: {elapsedTime}초</Text>
-          {location && (
-            <Text style={styles.infoText}>
-              현재 위치: {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
-            </Text>
-          )}
+        {loading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#0000ff" />
+          <Text>동선 추적 중...</Text>
         </View>
       )}
-      <RowBar/>
     </View>
+    <RowBar />
+  </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
   container: {
     flex: 1,
     justifyContent: 'center',
@@ -90,46 +157,29 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#555',
     marginBottom: 20,
-  },
-  iconContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '60%',
-    marginBottom: 20,
-  },
-  icon: {
-    fontSize: 24,
-  },
-  mapIconContainer: {
-    marginBottom: 20,
-  },
-  mapIcon: {
-    fontSize: 50,
   },
   button: {
     backgroundColor: '#8FB299',
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 10,
+    marginVertical: 20,
   },
   buttonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
   },
-  infoContainer: {
-    marginTop: 20,
+  loadingContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
     alignItems: 'center',
-  },
-  infoText: {
-    fontSize: 14,
-    color: '#333',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',  // 반투명 배경
   },
 });
 

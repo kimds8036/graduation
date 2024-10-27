@@ -8,7 +8,7 @@ const ocrRoutes = require('./routes/ocrRoutes');    // OCR 라우트
 const uploadRoutes = require('./routes/uploadRoutes');
 const userRoute = require('./routes/userRoutes'); 
 const notificationRoutes = require('./routes/notificationRoutes');
-
+const trackingRoute = require('./routes/trackingRoute'); 
 
 
 
@@ -43,7 +43,7 @@ app.use('/api/auth', authRoutes);  // 로그인 및 회원가입 라우트
 app.use('/api/ocr', ocrRoutes);    // OCR 라우트 연결
 app.use('/api/upload', uploadRoutes);
 app.use('/api/notifications', notificationRoutes);
-
+app.use('/api/tracking', trackingRoute); 
 
 
 

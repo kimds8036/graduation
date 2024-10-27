@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Dimensions, TouchableOpacity, Image, Alert } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, Image, Alert } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import Rowbar from './Rowbar';
-import { SafeAreaView } from 'react-native-safe-area-context'; // SafeAreaView를 하단바 영역에만 사용
+import { SafeAreaView } from 'react-native-safe-area-context'; // SafeAreaView를 하단에만 사용
 
 export default function App() {
   const [location, setLocation] = useState(null);
@@ -51,7 +51,9 @@ export default function App() {
         longitudeDelta: 0.005,
       };
 
-      mapRef.animateToRegion(newRegion, 1000); // 1초 동안 부드럽게 이동
+      if (mapRef) {
+        mapRef.animateToRegion(newRegion, 1000); // 1초 동안 부드럽게 이동
+      }
     } catch (error) {
       Alert.alert('위치 오류', '현재 위치를 가져오는 중 오류가 발생했습니다.');
     }
@@ -81,12 +83,12 @@ export default function App() {
           </Marker>
         )}
       </MapView>
-
+  
       <TouchableOpacity style={styles.locationButton} onPress={goToCurrentLocation}>
         <Ionicons name="compass-outline" size={22} color="black" />
       </TouchableOpacity>
       
-      <SafeAreaView style={styles.bottomArea}> 
+      <SafeAreaView style={styles.safeAreaBottom}>
         <Rowbar />
       </SafeAreaView>
     </View>
@@ -96,18 +98,18 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
   },
   map: {
-    width: Dimensions.get('window').width,
-    height: Dimensions.get('window').height,
+    flex: 1, // 지도가 남는 공간을 모두 차지하도록 설정
   },
   locationButton: {
     position: 'absolute',
-    bottom: 80, // Rowbar 위로 버튼이 올라가게 조정
+    bottom: 20,
     right: 20,
     backgroundColor: '#fff',
     padding: 10,
-    borderRadius: 30, // 동그란 버튼
+    borderRadius: 30,
     shadowColor: '#000',
     shadowOpacity: 0.3,
     shadowOffset: { width: 0, height: 2 },
@@ -118,9 +120,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  bottomArea: {
-    backgroundColor: '#fff', // 하단바 배경색
-    paddingBottom: 20, // 하단 여백 추가
-    flex: 0,  // 하단바가 원하는 높이로만 그려지도록 설정
+  safeAreaBottom: {
+    backgroundColor: '#fff', // RowBar의 배경색
   },
 });

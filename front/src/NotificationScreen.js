@@ -10,6 +10,24 @@ const NotificationScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const { setUnreadCount } = useNotification(); // Context에서 setUnreadCount 가져오기
 
+  // 알림 메시지를 동적으로 생성하는 함수
+  const generateNotificationMessage = (notificationType, senderDepartment) => {
+    switch (notificationType) {
+      case 'interest':
+        return `관심을 보냈습니다! (학과: ${senderDepartment})`;
+      case 'message':
+        return `새로운 메시지가 도착했습니다. (학과: ${senderDepartment})`;
+      case 'match_accept':
+        return `매칭 요청을 수락했습니다! (학과: ${senderDepartment})`;
+      case 'match_decline':
+        return `매칭 요청을 거절했습니다. (학과: ${senderDepartment})`;
+      case 'post_member_join':
+        return `게시글 멤버가 결성되었습니다. (학과: ${senderDepartment})`;
+      default:
+        return '새로운 알림이 있습니다.';
+    }
+  };
+
   useEffect(() => {
     fetchNotifications();
     markAllAsRead(); // 알림 읽음 처리 함수 실행
@@ -67,7 +85,7 @@ const NotificationScreen = () => {
           <TouchableOpacity style={styles.notificationItem}>
             <Image source={{ uri: 'https://source.unsplash.com/random/50x50?icon' }} style={styles.icon} />
             <View style={styles.notificationText}>
-              <Text>{item.message}</Text>
+              <Text>{generateNotificationMessage(item.notificationType, item.senderDepartment)}</Text>
             </View>
           </TouchableOpacity>
         )}

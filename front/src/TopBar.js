@@ -31,24 +31,7 @@ const TopBar = ({ setIsLoggedIn }) => {
   }, [setUnreadCount]);
 
   // 로그아웃 함수
-  const handleLogout = async () => {
-    try {
-      await AsyncStorage.removeItem('jwt_token'); // JWT 토큰 삭제
-      await AsyncStorage.removeItem('_id'); // 사용자 _id 삭제
-      Alert.alert('로그아웃', '로그아웃되었습니다.');
 
-      setIsLoggedIn(false); // 로그아웃 상태 업데이트
-
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: 'Login' }],
-        })
-      );
-    } catch (error) {
-      console.error('로그아웃 중 오류가 발생했습니다.', error);
-    }
-  };
 
   return (
     <View style={styles.topBar}>

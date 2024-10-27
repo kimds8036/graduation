@@ -107,7 +107,7 @@ const StudentInfoScreen = ({ route }) => {
             profileImageUrl,
           };
     
-          const response = await axios.post('http://192.168.0.53:5000/api/users/signup', userData);
+          const response = await axios.post('http://192.168.0.53:5000/api/auth/signup', userData);
           console.log('회원가입 성공:', response.data);
           alert('회원가입이 완료되었습니다.');
           navigation.navigate('Login');

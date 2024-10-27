@@ -95,12 +95,13 @@ function ProfileEditScreen() {
 }
 const styles = StyleSheet.create({
   safeArea: {
-    flex: 1,  // SafeAreaView 전체를 채우도록 설정
-  
+    flex: 1,
+    justifyContent: 'space-between', // RowBar와 설정 메뉴를 분리
+    backgroundColor: '#fff',
   },
   container: {
-    flex: 1,  // 컨텐츠 영역이 남는 공간을 모두 차지하도록
-    paddingHorizontal: 15,
+    flex: 1,
+    paddingHorizontal: 16,
   },
   // 나머지 스타일 그대로
   header: {

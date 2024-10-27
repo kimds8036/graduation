@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // AsyncStorage 가져오기
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Homescreen from './src/Homescreen';
 import Matching1 from './src/Matching1.js';
 import Matching2 from './src/Matching2.js';
@@ -10,11 +9,11 @@ import LoginScreen from './src/LoginScreen';
 import SignupScreen from './src/SignupScreen';
 import NotificationScreen from './src/NotificationScreen';
 import StudentInfoScreen from './src/StudentInfoScreen';
-import RowBar from './src/Rowbar'; // RowBar 컴포넌트 가져오기
-import ChatScreen from './src/ChatScreen'; // Chat 화면 추가
-import MapScreen from './src/MapScreen'; // Map 화면 추가
-import SaveRouteScreen from './src/SaveRouteScreen'; // SaveRoute 화면 추가
-import { NotificationProvider } from './src/NotificationContext'; // 추가
+import RowBar from './src/Rowbar'; 
+import ChatScreen from './src/ChatScreen';
+import MapScreen from './src/MapScreen';
+import SaveRouteScreen from './src/SaveRouteScreen';
+import { NotificationProvider } from './src/NotificationContext';
 import BoardScreen from './src/Boardscreen';
 import SettingsScreen from './src/SettingsScreen';
 import ModifyProfile from './src/ModifyProfile';
@@ -22,16 +21,7 @@ import Setpushnotification from './src/Setpushnotification';
 import Help from './src/Help';
 import Writepostscreen from './src/Writepostscreen';
 
-
-
-
-
-
-
-
-
 const Stack = createStackNavigator();
-
 
 // HomeStack: Home 관련 스택
 function HomeStack() {
@@ -47,10 +37,9 @@ function HomeStack() {
       <Stack.Screen name="Setpushnotification" component={Setpushnotification} options={{ headerShown: false }} />
       <Stack.Screen name="Help" component={Help} options={{ headerShown: false }} />
       <Stack.Screen name="Writepostscreen" component={Writepostscreen} options={{ headerShown: false }} />
-
       <Stack.Screen name="NotificationScreen" component={NotificationScreen} options={{ headerShown: false }} />
       <Stack.Screen name="BoardScreen" component={BoardScreen} options={{ headerShown: false }} />
-
+      <Stack.Screen name="AuthStack" component={AuthStack} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }
@@ -73,7 +62,7 @@ function App() {
   useEffect(() => {
     const checkAutoLogin = async () => {
       const token = await AsyncStorage.getItem('jwt_token');
-      setIsLoggedIn(!!token);
+      setIsLoggedIn(!!token); // 토큰이 있으면 true, 없으면 false
     };
     checkAutoLogin();
   }, []);

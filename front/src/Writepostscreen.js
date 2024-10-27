@@ -8,6 +8,7 @@ import Slider from '@react-native-community/slider';
 import RNPickerSelect from 'react-native-picker-select'; // Wheel Picker
 import RowBar from './Rowbar';
 
+
 export default function PostCreationScreen() {
     const [selectedGender, setSelectedGender] = useState(''); 
     const [startHour, setStartHour] = useState('00');
@@ -167,6 +168,7 @@ export default function PostCreationScreen() {
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
+        backgroundColor: '#fff',
     },
     container: {
         flex: 1,
