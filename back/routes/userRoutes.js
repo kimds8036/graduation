@@ -10,6 +10,21 @@ const router = express.Router();
 // 사용자 목록 가져오기 (홈 화면에서 사용)
 router.get('/users', getUsers); // 이 부분 추가
 
+
+router.get('/users/:userId', async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const user = await User.findById(userId).select('_id name department mbti profileImageUrl');
+    if (!user) {
+      return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
+    }
+    res.status(200).json(user);
+  } catch (error) {
+    console.error('사용자 정보 조회 오류:', error);
+    res.status(500).json({ error: '사용자 정보를 가져오는 데 오류가 발생했습니다.' });
+  }
+});
 // 매칭된 사용자 정보 가져오기
 router.get('/matches', authMiddleware, getMatchedUsers);
 

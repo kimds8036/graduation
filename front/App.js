@@ -21,6 +21,12 @@ import Setpushnotification from './src/Setpushnotification';
 import Help from './src/Help';
 import Writepostscreen from './src/Writepostscreen';
 import ProfileDetailScreen from './src/ProfileDetailScreen';
+import MatchingRequest from './src/MatchingRequest';
+
+
+
+
+
 
 const Stack = createStackNavigator();
 
@@ -42,6 +48,7 @@ function HomeStack() {
       <Stack.Screen name="BoardScreen" component={BoardScreen} options={{ headerShown: false }} />
       <Stack.Screen name="ProfileDetailScreen" component={ProfileDetailScreen} options={{ headerShown: false }} />
       <Stack.Screen name="AuthStack" component={AuthStack} options={{ headerShown: false }} />
+      <Stack.Screen name="MatchingRequest" component={MatchingRequest} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }
