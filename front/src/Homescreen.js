@@ -1,67 +1,39 @@
 import React, { useEffect, useState } from 'react';
-import { ImageBackground, View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, SafeAreaView, Alert, RefreshControl } from 'react-native';
+import { ImageBackground, View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, SafeAreaView, Alert } from 'react-native';
 import TopBar from './TopBar';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import Rowbar from './Rowbar';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // 올바른 경로에서 가져오기
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-
-
-
-function Homescreen() {
-  const [users, setUsers] = useState([]); // 전체 사용자 데이터
-  const [randomUsers, setRandomUsers] = useState([]); // 랜덤으로 선택된 사용자
-  const [refreshing, setRefreshing] = useState(false); // 새로고침 상태 관리
+function UserCard({ user }) {
+  const [matchPercentage, setMatchPercentage] = useState(null);
   const navigation = useNavigation();
-  
-  
+
   useEffect(() => {
-    const intervalId = setInterval(() => {
-      fetchUsers(); // 10분마다 자동 새로고침
-    }, 600000); // 10분 = 600,000 milliseconds
-
-    return () => clearInterval(intervalId); // 컴포넌트가 언마운트될 때 타이머 해제
-  }, []);
-  // API에서 사용자 데이터를 가져오는 함수
-  const fetchUsers = async () => {
-    try {
-      const currentUserId = await AsyncStorage.getItem('_id'); // 로그인한 사용자 ID 가져오기
-      const response = await axios.get('http://192.168.0.53:5000/api/users/users');
-      console.log('API Response:', response.data);
-      const filteredUsers = response.data.filter(user => user._id !== currentUserId); // 자신 제외
-      if (filteredUsers.length < 4) {
-        setRandomUsers(filteredUsers); // 사용자가 4명보다 적으면 모두 표시
-      } else {
-        const randomSelection = filteredUsers.sort(() => 0.5 - Math.random()).slice(0, 4);
-        setRandomUsers(randomSelection); // 무작위로 4명 선택
+    const fetchMatchPercentage = async () => {
+      try {
+        const user1Id = await AsyncStorage.getItem('_id');
+        const response = await axios.get(`http://192.168.0.53:5000/api/tracking/compare-routes/${user1Id}/${user._id}`);
+        if (response.status === 200 && response.data.matchPercentage >= 2) {
+          setMatchPercentage(response.data.matchPercentage);
+        }
+      } catch (error) {
+        console.error('Error fetching match percentage:', error);
       }
-    } catch (error) {
-      console.error('사용자 데이터를 가져오는 중 오류:', error);
-    }
-  };
+    };
 
+    fetchMatchPercentage();
+  }, [user._id]);
 
-  // 컴포넌트가 처음 마운트될 때 사용자 데이터를 가져옴
-  useEffect(() => {
-    fetchUsers(); // 컴포넌트 마운트 시 데이터 로드
-  }, []); // 빈 배열로 한 번만 실행
-
-  const sendInterestNotification = async (recipientId) => {
+  const sendInterestNotification = async () => {
     try {
-      const senderId = await AsyncStorage.getItem('_id'); // 로그인된 사용자 _id 가져오기
-
-      if (!senderId) {
-        throw new Error('로그인된 사용자 ID를 찾을 수 없습니다.');
-      }
-
-      // 알림 전송 API 호출 (발신자의 학과 정보는 백엔드에서 가져옴)
+      const senderId = await AsyncStorage.getItem('_id');
       await axios.post('http://192.168.0.53:5000/api/notifications/send-interest', {
-        senderId,    // 발신자 _id만 보냄
-        recipientId, // 수신자 _id
+        senderId,
+        recipientId: user._id,
         message: '관심을 보냈습니다!',
       });
-
       Alert.alert('알림 전송 성공', '관심 알림이 전송되었습니다.');
     } catch (error) {
       console.error('알림 전송 오류:', error.response ? error.response.data : error.message);
@@ -69,57 +41,85 @@ function Homescreen() {
     }
   };
 
-  const handleUserCardPress = (user) => {
-    // 상세 화면으로 사용자 데이터 전달하며 이동
-    navigation.navigate('ProfileDetailScreen', { user });
+  return (
+    <TouchableOpacity onPress={() => navigation.navigate('ProfileDetailScreen', { user })}>
+      <View style={styles.userCard}>
+        <ImageBackground
+          source={{ uri: user.profileImageUrl }}
+          style={styles.userImage}
+          imageStyle={styles.imageBackgroundStyle}
+        >
+          <TouchableOpacity
+            style={styles.heartButton}
+            onPress={sendInterestNotification}
+          >
+            <Text>❤️</Text>
+          </TouchableOpacity>
+
+          <View style={styles.userInfo}>
+            <Text style={styles.userDepartment}>{user.department}</Text>
+            <Text style={styles.userMbti}>{user.mbti}</Text>
+            <View style={styles.userFooter}>
+              <Text style={styles.matchPercentage}>{matchPercentage ? `${matchPercentage}%` : '계산중...'}</Text>
+            </View>
+          </View>
+        </ImageBackground>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+function Homescreen() {
+  const [randomUsers, setRandomUsers] = useState([]);
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      fetchUsers();
+    }, 600000);
+
+    return () => clearInterval(intervalId);
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      const currentUserId = await AsyncStorage.getItem('_id');
+      const response = await axios.get('http://192.168.0.53:5000/api/users/users');
+      const filteredUsers = response.data.filter(user => user._id !== currentUserId);
+
+      if (filteredUsers.length < 4) {
+        setRandomUsers(filteredUsers);
+      } else {
+        const randomSelection = filteredUsers.sort(() => 0.5 - Math.random()).slice(0, 4);
+        setRandomUsers(randomSelection);
+      }
+    } catch (error) {
+      console.error('사용자 데이터를 가져오는 중 오류:', error);
+    }
   };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
   return (
     <SafeAreaView style={styles.safeArea}>
-          <TopBar />
-          <ScrollView
-            style={styles.container}
-          >
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>동선이 비슷한 친구들이에요</Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Matching1')}>
-                <Text style={styles.moreText}>더보기 &gt;</Text>
-              </TouchableOpacity>
-            </View>
+      <TopBar />
+      <ScrollView style={styles.container}>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>동선이 비슷한 친구들이에요</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Matching1')}>
+            <Text style={styles.moreText}>더보기 &gt;</Text>
+          </TouchableOpacity>
+        </View>
 
-            <View style={styles.userContainer}>
+        <View style={styles.userContainer}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             {randomUsers.map((user, index) => (
-              <TouchableOpacity
-                key={index}
-                onPress={() => navigation.navigate('ProfileDetailScreen', { user })} // 사용자 카드 터치 시 상세 화면으로 이동
-              >
-                <View style={styles.userCard}>
-                  {console.log(`User ${index} profileImageUrl:`, user.profileImageUrl)}
-
-                  <ImageBackground
-                    source={{ uri: user.profileImageUrl }}
-                    style={styles.userImage}
-                    imageStyle={styles.imageBackgroundStyle}  // 이미지 스타일
-                  >
-                    <TouchableOpacity
-                      style={styles.heartButton}
-                      onPress={() => sendInterestNotification(user._id)}
-                    >
-                      <Text>❤️</Text>
-                    </TouchableOpacity>
-
-                    <View style={styles.userInfo}>
-                      <Text style={styles.userName}>{user.name}</Text> 
-                      <Text style={styles.userDepartment}>{user.department}</Text> 
-                      <Text style={styles.userMbti}>{user.mbti}</Text> 
-                    </View>
-                  </ImageBackground>
-                </View>
-              </TouchableOpacity>
+              <UserCard key={index} user={user} />
             ))}
           </ScrollView>
         </View>
-
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>함께 할 친구를 찾고있어요</Text>
@@ -181,16 +181,21 @@ const styles = StyleSheet.create({
     height: 200,
     marginHorizontal: 10,
     borderRadius: 15,
-    overflow: 'hidden', // 카드 안에서 이미지와 텍스트가 넘치지 않도록 설정
-    backgroundColor: '#f0f0f0', // 카드의 기본 배경색
+    overflow: 'hidden',
+    backgroundColor: '#f0f0f0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
   },
   userImage: {
     width: '100%',
     height: '100%',
-    justifyContent: 'flex-end', // 이미지 하단에 정보가 표시되도록 설정
+    justifyContent: 'flex-end',
   },
   imageBackgroundStyle: {
-    borderRadius: 15, // 이미지에 둥근 모서리 적용
+    borderRadius: 15,
   },
   heartButton: {
     position: 'absolute',
@@ -201,26 +206,40 @@ const styles = StyleSheet.create({
     padding: 5,
   },
   userInfo: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)', // 투명한 흰색 배경
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     padding: 10,
     borderRadius: 10,
-    height: 60,
-    justifyContent: 'center',
-  },
-  userName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    
-    marginBottom: 2, // 아래에 여백 추가
+    height: 50,
+    position: 'relative',
+    justifyContent: 'space-between',
   },
   userDepartment: {
-    fontSize: 14,
-    
-    marginBottom: 2, // 아래에 여백 추가
+    fontWeight: 'bold',
+    fontSize: 11,
   },
   userMbti: {
-    fontSize: 14,
-    
+    fontSize: 12,
+    fontWeight: '300',
+  },
+  userFooter: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 30,
+    marginLeft: 'auto',
+    alignItems: 'center',
+    position: 'absolute',
+    right: 5,
+    top: '50%',
+    transform: [{ translateY: -5 }],
+    minWidth: 10,
+    minHeight: 10,
+    justifyContent: 'center',
+  },
+  matchPercentage: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333333',
   },
   activityCard: {
     marginVertical: 20,
@@ -267,6 +286,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  userFooter: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 30,
+    marginLeft: 'auto', // 오른쪽 끝으로 이동
+    alignItems: 'center',
+    position: 'absolute', // 절대 위치로 설정
+    right: 5, // 오른쪽 끝에 배치
+    top: '50%', // 수직 가운데에 위치
+    transform: [{ translateY: -5 }], // 중앙에 정확히 배치하기 위해 약간 위로 이동
+    minWidth: 10, // 최소 너비 설정
+    minHeight: 10, // 최소 높이 설정
+    justifyContent: 'center', // 텍스트 가운데 정렬
+  
+  },
+  matchPercentage: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333333',
   },
 });
 
