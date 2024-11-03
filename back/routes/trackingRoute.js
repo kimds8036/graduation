@@ -102,78 +102,111 @@ router.post('/stop-tracking', async (req, res) => {
   }
 });
 
-// 최대 일치율 범위 찾기 함수 (최소 2시간 범위)
+
+
+
 async function compareRoutes(user1Id, user2Id) {
   console.log(`compareRoutes 호출 - user1Id: ${user1Id}, user2Id: ${user2Id}`);
   
-  // 해당 사용자 아이디에 대한 트래킹 문서 수 확인
-  const user1DataCount = await Tracking.countDocuments({ userid: user1Id });
-  const user2DataCount = await Tracking.countDocuments({ userid: user2Id });
-  console.log(`user1Id (${user1Id})의 문서 수: ${user1DataCount}, user2Id (${user2Id})의 문서 수: ${user2DataCount}`);
+  const user1Data = await Tracking.findOne({ userid: user1Id });
+  const user2Data = await Tracking.findOne({ userid: user2Id });
 
-  const daysOfWeek = ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"];
-  let bestMatch = { day: null, matchPercentage: 0, bestStart: null, bestEnd: null };
+  if (!user1Data || !user2Data) {
+    console.log("사용자 데이터가 없습니다.");
+    return { matchPercentage: 0, bestStart: null, bestEnd: null };
+  }
 
-  for (const targetDay of daysOfWeek) {
-    const user1Data = await Tracking.findOne({ userid: user1Id, day: targetDay });
-    const user2Data = await Tracking.findOne({ userid: user2Id, day: targetDay });
+  const TOLERANCE = 0.00005;
+  let matchResults = [];
+  let comparisonCount = 0;
 
-    if (!user1Data || !user2Data) {
-      continue;
-    }
-
-    const parseTimeData = (timedata) => {
-      return timedata.map((entry) => {
-        const [time, latitude, longitude] = entry.match(/([\d:]+), latitude: ([\d.]+), longitude: ([\d.]+)/).slice(1);
-        return { time, latitude: parseFloat(latitude), longitude: parseFloat(longitude) };
-      });
-    };
-
-    const user1Routes = parseTimeData(user1Data.time_data);
-    const user2Routes = parseTimeData(user2Data.time_data);
+  for (let i = 0; i <= 287; i++) {
+    const timeKey = `Time_${String(i).padStart(2, '0')}`;
     
-    const matchResults = [];
-    const TOLERANCE = 0.0005;
-
-    user1Routes.forEach(user1Route => {
-      user2Routes.forEach(user2Route => {
-        if (user1Route.time === user2Route.time) {
-          const latDiff = Math.abs(user1Route.latitude - user2Route.latitude);
-          const lonDiff = Math.abs(user1Route.longitude - user2Route.longitude);
-    
-          if (latDiff <= TOLERANCE && lonDiff <= TOLERANCE) {
-            matchResults.push(user1Route.time);
-          }
-        }
-      });
-    });
-
-    const matchResultForDay = calculateBestMatchInterval(matchResults, targetDay);
-
-    if (matchResultForDay.matchPercentage >= 5 && matchResultForDay.matchPercentage > bestMatch.matchPercentage) {
-      bestMatch = matchResultForDay;
+    if (user1Data[timeKey] && user2Data[timeKey]) {
+      comparisonCount++;
+  
+      const [time1, lat1, lon1] = user1Data[timeKey].split(', ');
+      const latitude1 = parseFloat(lat1.split(': ')[1]);
+      const longitude1 = parseFloat(lon1.split(': ')[1]);
+  
+      const [time2, lat2, lon2] = user2Data[timeKey].split(', ');
+      const latitude2 = parseFloat(lat2.split(': ')[1]);
+      const longitude2 = parseFloat(lon2.split(': ')[1]);
+  
+      const latDiff = Math.abs(latitude1 - latitude2);
+      const lonDiff = Math.abs(longitude1 - longitude2);
+  
+      const formattedTime = convertTimeKeyToTime(timeKey);
+  
+      if (latDiff <= TOLERANCE && lonDiff <= TOLERANCE) {
+        console.log(`일치 - 시간: ${formattedTime}, 위치1: (latitude: ${latitude1}, longitude: ${longitude1}), 위치2: (latitude: ${latitude2}, longitude: ${longitude2})`);
+        matchResults.push(timeKey);
+      } 
     }
   }
 
-  console.log(`compareRoutes 결과: ${JSON.stringify(bestMatch)}`);
-  return bestMatch;
+  console.log(`총 비교한 시간의 갯수: ${comparisonCount}`);
+  
+  const matchPercentage = Math.round((matchResults.length / comparisonCount) * 100);
+
+  const bestMatchInterval = calculateBestMatchInterval(matchResults, user1Data.day, 3); // 3은 15분 단위
+  
+  const bestStart = bestMatchInterval.bestStart ? convertTimeKeyToTime(bestMatchInterval.bestStart) : null;
+  const bestEnd = bestMatchInterval.bestEnd ? convertTimeKeyToTime(bestMatchInterval.bestEnd) : null;
+
+  console.log(`compareRoutes 결과: 일치율: ${matchPercentage}%, 일치 범위: ${bestStart} ~ ${bestEnd}`);
+
+  if (matchPercentage >= 50 && matchPercentage <= 70) {
+    console.log(`일치율이 50% ~ 70%입니다: ${matchPercentage}%`);
+  }
+
+  return { matchPercentage, bestStart, bestEnd };
 }
 
-function calculateBestMatchInterval(matchResults, targetDay) {
-  const totalMatches = matchResults.length;
+function calculateBestMatchInterval(matchResults, targetDay, intervalSize) {
+  const intervals = [];
+  let startTime = null;
+  let endTime = null;
+
+  matchResults.forEach((time, index) => {
+    if (startTime === null) startTime = time;
+    endTime = time;
+
+    if (index === matchResults.length - 1 || getTimeDifference(matchResults[index], matchResults[index + 1]) > intervalSize * 5) {
+      intervals.push({ start: startTime, end: endTime });
+      startTime = null;
+      endTime = null;
+    }
+  });
+
+  if (intervals.length === 0) {
+    return { day: targetDay, matchPercentage: 0, bestStart: null, bestEnd: null };
+  }
+
+  const longestInterval = intervals.reduce((max, interval) => 
+    getTimeDifference(interval.start, interval.end) > getTimeDifference(max.start, max.end) ? interval : max, intervals[0]);
   const totalTimeSlots = matchResults.length;
+  const matchedTimeSlots = intervals.reduce((sum, interval) => sum + getTimeDifference(interval.start, interval.end) / 5, 0);
 
-  const matchPercentage = totalTimeSlots > 0 ? (totalMatches / totalTimeSlots) * 100 : 0;
+  const matchPercentage = totalTimeSlots > 0 ? (matchedTimeSlots / totalTimeSlots) * 100 : 0;
 
-  return {
-    day: targetDay,
-    matchPercentage: matchPercentage,
-    bestStart: null,
-    bestEnd: null
-  };
+  return { day: targetDay, matchPercentage: matchPercentage, bestStart: longestInterval.start, bestEnd: longestInterval.end };
 }
 
-// 동선 비교 API 엔드포인트
+function convertTimeKeyToTime(timeKey) {
+  const index = parseInt(timeKey.split('_')[1], 10);
+  const hours = String(Math.floor(index / 12)).padStart(2, '0');
+  const minutes = String((index % 12) * 5).padStart(2, '0');
+  return `${hours}:${minutes}`;
+}
+
+function getTimeDifference(time1, time2) {
+  const [hours1, minutes1] = time1.split(":").map(Number);
+  const [hours2, minutes2] = time2.split(":").map(Number);
+  return Math.abs((hours2 * 60 + minutes2) - (hours1 * 60 + minutes1));
+}
+
 router.get('/compare-routes/:user1Id/:user2Id', async (req, res) => {
   const { user1Id, user2Id } = req.params;
   console.log(`compare-routes 요청 - user1Id: ${user1Id}, user2Id: ${user2Id}`);
@@ -193,4 +226,93 @@ router.get('/compare-routes/:user1Id/:user2Id', async (req, res) => {
   }
 });
 
+// 동선 비교 및 지도 표시 API 엔드포인트
+// 동선 비교 및 지도 표시 API 엔드포인트
+router.get('/get-overlapping-routes/:user1Id/:user2Id', async (req, res) => {
+  const { user1Id, user2Id } = req.params;
+  console.log(`get-overlapping-routes 요청 - user1Id: ${user1Id}, user2Id: ${user2Id}`);
+
+  try {
+    const user1Data = await Tracking.findOne({ userid: user1Id });
+    const user2Data = await Tracking.findOne({ userid: user2Id });
+
+    if (!user1Data || !user2Data) {
+      console.log("사용자 데이터가 없습니다.");
+      return res.json({ message: 'User data not found', overlap: [] });
+    }
+
+    const TOLERANCE = 0.00005;
+    let matchResults = [];
+    let overlapCoordinates = [];
+    let comparisonCount = 0;
+
+    // 모든 시간대 (00:00 ~ 23:55) 비교
+    for (let i = 0; i <= 287; i++) {
+      const timeKey = `Time_${String(i).padStart(2, '0')}`;
+      
+      if (user1Data[timeKey] && user2Data[timeKey]) {
+        comparisonCount++;
+  
+        const [time1, lat1, lon1] = user1Data[timeKey].split(', ');
+        const latitude1 = parseFloat(lat1.split(': ')[1]);
+        const longitude1 = parseFloat(lon1.split(': ')[1]);
+
+        const [time2, lat2, lon2] = user2Data[timeKey].split(', ');
+        const latitude2 = parseFloat(lat2.split(': ')[1]);
+        const longitude2 = parseFloat(lon2.split(': ')[1]);
+
+        const latDiff = Math.abs(latitude1 - latitude2);
+        const lonDiff = Math.abs(longitude1 - longitude2);
+
+        if (latDiff <= TOLERANCE && lonDiff <= TOLERANCE) {
+          matchResults.push(timeKey);
+          overlapCoordinates.push({
+            time: convertTimeKeyToTime(timeKey),
+            latitude: latitude1,
+            longitude: longitude1
+          });
+        }
+      }
+    }
+
+    // 전체 시간대 일치 퍼센트 계산
+    const totalMatchPercentage = Math.round((matchResults.length / comparisonCount) * 100);
+
+    // 일치 구간의 첫 번째와 마지막 시간 계산
+    const firstMatch = matchResults[0];
+    const lastMatch = matchResults[matchResults.length - 1];
+
+    // 일치 구간에 해당하는 비교 횟수 계산 (예: 14:30부터 15:20까지)
+    const intervalStartIndex = parseInt(firstMatch.split('_')[1], 10);
+    const intervalEndIndex = parseInt(lastMatch.split('_')[1], 10);
+    const intervalComparisonCount = intervalEndIndex - intervalStartIndex + 1;
+
+    // 일치 구간 퍼센트 계산
+    const intervalPercentage = Math.round((matchResults.length / intervalComparisonCount) * 100);
+
+    const bestStart = firstMatch ? convertTimeKeyToTime(firstMatch) : null;
+    const bestEnd = lastMatch ? convertTimeKeyToTime(lastMatch) : null;
+
+    console.log(`전체 시간대 일치율: ${totalMatchPercentage}%`);
+    console.log(`일치 구간 일치율: ${intervalPercentage}%`);
+
+    res.json({
+      totalMatchPercentage,      // 전체 시간대 일치 퍼센트
+      intervalMatchPercentage: intervalPercentage, // 일치 구간 퍼센트
+      bestStart,
+      bestEnd,
+      overlapCoordinates,
+      day: user1Data.day
+    });
+  } catch (error) {
+    console.error('겹치는 동선 조회 중 오류:', error);
+    res.status(500).json({ error: 'Error fetching overlapping routes' });
+  }
+});
+
 module.exports = router;
+
+
+
+
+

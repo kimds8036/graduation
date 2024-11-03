@@ -9,6 +9,8 @@ const uploadRoutes = require('./routes/uploadRoutes');
 const userRoute = require('./routes/userRoutes'); 
 const notificationRoutes = require('./routes/notificationRoutes');
 const trackingRoute = require('./routes/trackingRoute'); 
+const matchRoutes = require('./routes/matchRoutes');
+
 
 
 
@@ -45,6 +47,11 @@ app.use('/api/ocr', ocrRoutes);    // OCR 라우트 연결
 app.use('/api/upload', uploadRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/tracking', trackingRoute); 
+
+
+
+
+app.use('/api/matches', matchRoutes);
 
 
 

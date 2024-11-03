@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, SafeAreaView, StyleSheet, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, SafeAreaView, StyleSheet } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import TopBar from './TopBar';
-import { useNotification } from './NotificationContext';
+import { useNotification } from './NotificationContext'; // Notification Context 가져오기
 import Icon from 'react-native-vector-icons/FontAwesome'; 
 import Rowbar from './Rowbar';
 import { useNavigation } from '@react-navigation/native';
@@ -20,13 +20,14 @@ const iconMap = {
 const NotificationScreen = () => {
   const [notifications, setNotifications] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
-  const { setUnreadCount } = useNotification();
+  const { setUnreadCount } = useNotification(); // Context에서 setUnreadCount 가져오기
 
   useEffect(() => {
     fetchNotifications();
-    markAllAsRead();
+    markAllAsRead(); // 알림 읽음 처리 함수 실행
   }, []);
 
+  // 알림 읽음 처리 함수
   const markAllAsRead = async () => {
     try {
       const recipientId = await AsyncStorage.getItem('_id');
@@ -35,14 +36,18 @@ const NotificationScreen = () => {
         return;
       }
 
-      await axios.put(`http://192.168.0.53:5000/api/notifications/mark-all-as-read/${recipientId}`);
-      setNotifications(prev => prev.map(notification => ({ ...notification, read: true })));
-      setUnreadCount(0);
+      await axios.put(`http://192.168.24.108:5000/api/notifications/mark-all-as-read/${recipientId}`);
+
+      setNotifications(prev =>
+        prev.map(notification => ({ ...notification, read: true }))
+      );
+      setUnreadCount(0); // 읽지 않은 알림 수를 0으로 설정 (TopBar에 반영)
     } catch (error) {
       console.error('모든 알림 읽음 처리 중 오류가 발생했습니다.', error);
     }
   };
 
+  // 알림을 백엔드에서 가져오는 함수
   const fetchNotifications = async () => {
     try {
       const recipientId = await AsyncStorage.getItem('_id');
@@ -54,12 +59,13 @@ const NotificationScreen = () => {
       const response = await axios.get(`http://192.168.0.53:5000/api/notifications/${recipientId}`);
       setNotifications(response.data);
       const unreadCount = response.data.filter(notification => !notification.read).length;
-      setUnreadCount(unreadCount);
+      setUnreadCount(unreadCount); // 읽지 않은 알림 수 업데이트
     } catch (error) {
       console.error('알림을 불러오는 데 실패했습니다.', error);
     }
   };
 
+  // 알림 새로고침 함수
   const onRefresh = async () => {
     setRefreshing(true);
     await fetchNotifications();
@@ -67,39 +73,34 @@ const NotificationScreen = () => {
   };
 
   const NotificationItem = ({ notification }) => {
-    const navigation = useNavigation();
-    const { notificationType, message, _id } = notification;
+    const navigation = useNavigation(); // 네비게이션 훅 사용
+    const { notificationType, message, _id } = notification; // senderId 포함
 
     const handlePress = async () => {
-        if (notificationType === 'send_match_request') {
-            try {
-                const response = await axios.get(`http://192.168.0.53:5000/api/notifications/match-request/${_id}`);
-                const { status, message } = response.data;
+      // 매칭 요청 알람인 경우에만 매칭 요청 화면으로 이동
+      if (notificationType === 'send_match_request') {
+          try {
+              const response = await axios.get(`http://192.168.0.53:5000/api/notifications/match-request/${_id}`);
+              // 사용자 정보를 포함하여 매칭 요청 화면으로 이동
+              const userData = response.data;
+              navigation.navigate('MatchingRequest', { userData });
+          } catch (error) {
+              console.error('사용자 정보를 가져오는 데 오류가 발생했습니다.', error);
+          }
+      }
+  };
 
-                if (status === 'accepted' || status === 'declined') {
-                    Alert.alert('이미 만료된 요청', message || '이 요청은 이미 만료되었습니다.');
-                } else {
-                    navigation.navigate('MatchingRequest', { userData: response.data });
-                }
-            } catch (error) {
-                console.error('사용자 정보를 가져오는 데 오류가 발생했습니다.', error);
-                Alert.alert('오류', '사용자 정보를 가져오는 중 오류가 발생했습니다.');
-            }
-        }
-    };
-
-    return (
-        <TouchableOpacity style={styles.notificationItem} onPress={handlePress}>
-            <View style={styles.iconContainer}>
-                {iconMap[notificationType]}
-            </View>
-            <View style={styles.notificationText}>
-                <Text>{message}</Text>
-            </View>
-        </TouchableOpacity>
-    );
-};
-
+  return (
+      <TouchableOpacity style={styles.notificationItem} onPress={handlePress}>
+          <View style={styles.iconContainer}>
+              {iconMap[notificationType]} 
+          </View>
+          <View style={styles.notificationText}>
+              <Text>{notification.message}</Text> 
+          </View>
+      </TouchableOpacity>
+  );
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -115,6 +116,7 @@ const NotificationScreen = () => {
     </SafeAreaView>
   );
 };
+
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,

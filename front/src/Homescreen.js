@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { ImageBackground, View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, SafeAreaView, Alert } from 'react-native';
+import { ImageBackground, View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, SafeAreaView, Alert, Dimensions } from 'react-native';
 import TopBar from './TopBar';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import Rowbar from './Rowbar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-function UserCard({ user }) {
+const screenWidth = Dimensions.get('window').width;
+
+function UserCard({ user, matchedUsers }) {
   const [matchPercentage, setMatchPercentage] = useState(null);
   const navigation = useNavigation();
 
@@ -27,6 +29,11 @@ function UserCard({ user }) {
   }, [user._id]);
 
   const sendInterestNotification = async () => {
+    if (matchedUsers.includes(user._id)) {
+      Alert.alert('이미 매칭된 사용자입니다!', '이미 매칭된 사용자에게는 관심을 보낼 수 없습니다.');
+      return;
+    }
+
     try {
       const senderId = await AsyncStorage.getItem('_id');
       await axios.post('http://192.168.0.53:5000/api/notifications/send-interest', {
@@ -37,7 +44,11 @@ function UserCard({ user }) {
       Alert.alert('알림 전송 성공', '관심 알림이 전송되었습니다.');
     } catch (error) {
       console.error('알림 전송 오류:', error.response ? error.response.data : error.message);
-      Alert.alert('알림 전송 실패', '관심 알림 전송에 실패했습니다.');
+      if (error.response && error.response.status === 400 && error.response.data.error === '이미 관심표시를 한 상대입니다!') {
+        Alert.alert('이미 관심 표시를 한 상대입니다!', '같은 대상에게는 하루에 한번만 관심 알람을 보낼 수 있습니다!');
+      } else {
+        Alert.alert('알림 전송 실패', '관심 알림 전송에 실패했습니다.');
+      }
     }
   };
 
@@ -71,21 +82,57 @@ function UserCard({ user }) {
 
 function Homescreen() {
   const [randomUsers, setRandomUsers] = useState([]);
+  const [matchedUsers, setMatchedUsers] = useState([]); // 매칭된 사용자 목록
+  const [rejectedUsers, setRejectedUsers] = useState([]); // 거절된 사용자 목록
   const navigation = useNavigation();
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const onScroll = (event) => {
+    const slideIndex = Math.round(event.nativeEvent.contentOffset.x / screenWidth);
+    setCurrentIndex(slideIndex);
+  };
 
   useEffect(() => {
-    const intervalId = setInterval(() => {
-      fetchUsers();
-    }, 600000);
-
-    return () => clearInterval(intervalId);
+    fetchMatchedUsers();
+    fetchRejectedUsers();
   }, []);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [matchedUsers, rejectedUsers]);
+
+  // 거절된 사용자 목록 가져오기
+  const fetchRejectedUsers = async () => {
+    try {
+      const currentUserId = await AsyncStorage.getItem('_id');
+      const response = await axios.get(`http://192.168.0.53:5000/api/rejected-users/${currentUserId}`);
+      setRejectedUsers(response.data.rejectedUserIds || []);
+    } catch (error) {
+      console.error('거절된 사용자 데이터를 가져오는 중 오류:', error);
+    }
+  };
+
+  const fetchMatchedUsers = async () => {
+    try {
+      const currentUserId = await AsyncStorage.getItem('_id');
+      const response = await axios.get(`http://192.168.0.53:5000/api/matches/${currentUserId}`);
+      setMatchedUsers(response.data.matchedUserIds || []);
+    } catch (error) {
+      console.error('매칭된 사용자 데이터를 가져오는 중 오류:', error);
+    }
+  };
 
   const fetchUsers = async () => {
     try {
       const currentUserId = await AsyncStorage.getItem('_id');
       const response = await axios.get('http://192.168.0.53:5000/api/users/users');
-      const filteredUsers = response.data.filter(user => user._id !== currentUserId);
+      
+      // 현재 사용자, 매칭된 사용자, 거절된 사용자를 제외한 사용자 필터링
+      const filteredUsers = response.data.filter(
+        user => user._id !== currentUserId && 
+                !matchedUsers.includes(user._id) && 
+                !rejectedUsers.includes(user._id)
+      );
 
       if (filteredUsers.length < 4) {
         setRandomUsers(filteredUsers);
@@ -97,10 +144,6 @@ function Homescreen() {
       console.error('사용자 데이터를 가져오는 중 오류:', error);
     }
   };
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -116,33 +159,57 @@ function Homescreen() {
         <View style={styles.userContainer}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             {randomUsers.map((user, index) => (
-              <UserCard key={index} user={user} />
+              <UserCard key={index} user={user} matchedUsers={matchedUsers} />
             ))}
           </ScrollView>
         </View>
 
-        <View style={styles.section}>
+        <View style={styles.sectionWithMarginTop}>
           <Text style={styles.sectionTitle}>함께 할 친구를 찾고있어요</Text>
           <TouchableOpacity onPress={() => navigation.navigate('BoardScreen')}>
             <Text style={styles.moreText}>더보기 &gt;</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={styles.activityCard}>
-          <Image
-            source={{ uri: 'https://source.unsplash.com/random/400x200?activity' }}
-            style={styles.activityImage}
-          />
-          <View style={styles.overlay} />
-          <View style={styles.activityInfo}>
-            <View style={styles.textContainer}>
-              <Text style={styles.activityTitle}>단원동 혼밥 탈출</Text>
-              <Text style={styles.activityDetails}>성별 무관 / 학과 무관 / 19:00</Text>
+        <ScrollView 
+          horizontal 
+          pagingEnabled 
+          showsHorizontalScrollIndicator={false}
+          onScroll={onScroll}
+          scrollEventThrottle={16} 
+          style={styles.cardSlider}
+        >
+          {[1, 2, 3].map((_, index) => (
+            <View key={index} style={styles.activityCard}>
+              <Image
+                source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/graduate-aee1b.appspot.com/o/profileImages%2Fback1.jpg?alt=media&token=94cf2077-2107-416d-ab71-600e453af5a5' }}
+                style={styles.activityImage}
+              />
+              <View style={styles.overlay} />
+              <View style={styles.activityInfo}>
+                <View style={styles.textContainer}>
+                  <Text style={styles.activityTitle}>단원동 혼밥 탈출</Text>
+                  <Text style={styles.activityDetails}>성별 무관 / 학과 무관 / 19:00</Text>
+                </View>
+                <TouchableOpacity style={styles.likeButton}>
+                  <Text>👍 7</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-            <TouchableOpacity style={styles.likeButton}>
-              <Text>👍 17</Text>
-            </TouchableOpacity>
-          </View>
+          ))}
+        </ScrollView>
+
+        {/* Indicator Dots */}
+        <View style={styles.indicatorContainer}>
+          {[0, 1, 2].map((index) => (
+            <View 
+              key={index} 
+              style={[
+                styles.indicator, 
+                currentIndex === index ? styles.activeIndicator : null
+              ]}
+            />
+          ))}
         </View>
       </ScrollView>
       <Rowbar />
@@ -165,6 +232,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginVertical: 15,
+  },
+  sectionWithMarginTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginVertical: 15,
+    marginTop: 30,
   },
   sectionTitle: {
     fontSize: 18,
@@ -209,13 +283,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     padding: 10,
     borderRadius: 10,
-    height: 50,
+    height: 70,
     position: 'relative',
-    justifyContent: 'space-between',
+    justifyContent: 'center', // 수직 가운데 정렬
+    alignItems: 'flex-start', // 왼쪽 정렬
   },
   userDepartment: {
     fontWeight: 'bold',
-    fontSize: 11,
+    fontSize: 14,
   },
   userMbti: {
     fontSize: 12,
@@ -241,13 +316,21 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333333',
   },
+  cardSlider: {
+    paddingHorizontal: 1, // 카드 좌우 여백을 설정하여 화면 중앙에 위치
+    marginTop: 20,
+  },
   activityCard: {
-    marginVertical: 20,
+    width: screenWidth * 0.9, // 화면 너비의 85%로 설정하여 좌우 여백 확보
+    height: 250, // 카드 높이 설정
+    alignSelf: 'center', // 카드 중앙 정렬
+    marginHorizontal: 10, // 카드 간격 설정
     borderRadius: 10,
     overflow: 'hidden',
     backgroundColor: '#e8e8e8',
     position: 'relative',
   },
+  
   activityImage: {
     width: '100%',
     height: 150,
@@ -287,26 +370,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  userFooter: {
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 30,
-    marginLeft: 'auto', // 오른쪽 끝으로 이동
+  indicatorContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
-    position: 'absolute', // 절대 위치로 설정
-    right: 5, // 오른쪽 끝에 배치
-    top: '50%', // 수직 가운데에 위치
-    transform: [{ translateY: -5 }], // 중앙에 정확히 배치하기 위해 약간 위로 이동
-    minWidth: 10, // 최소 너비 설정
-    minHeight: 10, // 최소 높이 설정
-    justifyContent: 'center', // 텍스트 가운데 정렬
-  
+    marginTop: 10,
   },
-  matchPercentage: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333333',
+  indicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#ccc',
+    marginHorizontal: 4,
+  },
+  activeIndicator: {
+    backgroundColor: '#007AFF',
   },
 });
 

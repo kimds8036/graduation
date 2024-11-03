@@ -133,9 +133,12 @@ router.put('/mark-all-as-read/:recipientId', async (req, res) => {
 });
 
 // 매칭 요청 생성
+// 매칭 요청 생성
+// 매칭 요청 생성
+// 매칭 요청 생성
 router.post('/send-match-request', async (req, res) => {
     try {
-        const { senderId, recipientId } = req.body;
+        const { senderId, recipientId, overrideDeclined } = req.body; // overrideDeclined 추가
 
         // 발신자 정보 확인
         const sender = await User.findById(senderId).select('department name');
@@ -143,46 +146,82 @@ router.post('/send-match-request', async (req, res) => {
             return res.status(400).json({ error: '발신자 정보를 찾을 수 없습니다.' });
         }
 
-        // 이전 매칭 요청 확인
-        const existingRequest = await MatchingRequest.findOne({ senderId, recipientId });
-        
+        // 기존 매칭 요청 확인
+        let existingRequest = await MatchingRequest.findOne({
+            $or: [
+                { senderId, recipientId },
+                { senderId: recipientId, recipientId: senderId }
+            ]
+        });
+
         if (existingRequest) {
             if (existingRequest.status === 'accepted') {
                 return res.status(400).json({ error: '이미 매칭이 수락된 사용자입니다.' });
             }
 
-            // 거절된 경우, 1주일이 지나야 다시 요청 가능
-            const oneWeekLater = new Date(existingRequest.declineDate);
-            oneWeekLater.setDate(oneWeekLater.getDate() + 7);
-            if (existingRequest.status === 'declined' && new Date() < oneWeekLater) {
-                return res.status(400).json({ error: '거절된 요청 후 1주일이 지나야 다시 요청할 수 있습니다.' });
+            if (existingRequest.status === 'pending') {
+                return res.status(400).json({ error: '이미 매칭 요청이 진행 중입니다.' });
+            }
+
+            // 거절된 경우
+            if (existingRequest.status === 'declined') {
+                const oneWeekLater = new Date(existingRequest.declineDate);
+                oneWeekLater.setDate(oneWeekLater.getDate() + 7);
+                
+                if (new Date() < oneWeekLater && !overrideDeclined) {
+                    // 1주일이 지나지 않았고, 사용자가 확인을 안 했다면 에러 반환
+                    return res.status(400).json({ error: '거절하신 상대입니다. 1주일 뒤 매칭이 가능합니다.' });
+                }
+
+                if (overrideDeclined) {
+                    // 사용자가 확인 팝업에서 "요청하기"를 선택한 경우, 상태를 `pending`으로 변경
+                    existingRequest.status = 'pending';
+                    existingRequest.declineDate = undefined; // 이전 거절 날짜 초기화
+                    await existingRequest.save();
+
+                    // 알림 메시지 생성
+                    const message = await generateNotificationMessage('send_match_request', senderId);
+
+                    // 알림 생성
+                    const notification = new Notification({
+                        senderId: new mongoose.Types.ObjectId(senderId),
+                        recipientId: new mongoose.Types.ObjectId(recipientId),
+                        message,
+                        notificationType: 'send_match_request',
+                    });
+
+                    await notification.save();
+                    return res.status(201).json({ message: '매칭 요청이 성공적으로 전송되었습니다.' });
+                }
             }
         }
 
-        // 매칭 요청 생성
-        const matchingRequest = new MatchingRequest({ senderId, recipientId });
+        // 새로운 매칭 요청 생성
+        const matchingRequest = new MatchingRequest({
+            senderId,
+            recipientId,
+            status: 'pending',
+        });
         await matchingRequest.save();
 
         // 알림 메시지 생성
-        const message = await generateNotificationMessage('send-match-request', senderId);
+        const message = await generateNotificationMessage('send_match_request', senderId);
 
         // 알림 생성
         const notification = new Notification({
             senderId: new mongoose.Types.ObjectId(senderId),
             recipientId: new mongoose.Types.ObjectId(recipientId),
-            message, // 생성된 메시지
+            message,
             notificationType: 'send_match_request',
         });
 
-        await notification.save(); // 알림 저장
-
+        await notification.save();
         res.status(201).json({ message: '매칭 요청이 성공적으로 전송되었습니다.' });
     } catch (error) {
         console.error('매칭 요청 생성 오류:', error);
         res.status(500).json({ error: '매칭 요청 전송에 실패했습니다.' });
     }
 });
-
 
 // 매칭 요청 응답
 // 매칭 요청 응답
@@ -239,34 +278,57 @@ router.put('/respond-match-request', async (req, res) => {
 
 // 매칭 요청 조회
 // 매칭 요청 정보 조회 라우트
+// 매칭 요청 정보 조회 라우트
+// 서버 코드
 router.get('/match-request/:notificationId', async (req, res) => {
     try {
         const { notificationId } = req.params;
         console.log(`알림 ID: ${notificationId}를 사용하여 매칭 요청 정보를 조회합니다.`);
 
-        // 해당 알림을 가져오기
-        const notification = await Notification.findById(notificationId).populate('senderId', 'name department mbti profileImageUrl'); // senderId로 사용자 정보 포함
+        const notification = await Notification.findById(notificationId).populate('senderId', 'name department mbti profileImageUrl');
         
         if (!notification) {
             console.error('해당 알림을 찾을 수 없습니다.');
             return res.status(404).json({ error: '해당 알림을 찾을 수 없습니다.' });
         }
-        
-        console.log('알림 데이터:', notification);
 
-        // 사용자 정보와 함께 알림 정보를 반환
+        const request = await MatchingRequest.findOne({
+            senderId: notification.senderId._id,
+            recipientId: notification.recipientId
+        });
+
+        if (!request) {
+            return res.status(404).json({ error: '해당 매칭 요청을 찾을 수 없습니다. 이전 요청이 만료되었을 수 있습니다.' });
+        }
+
+        let message = '';
+        if (request.status === 'declined') {
+            const oneWeekLater = new Date(request.declineDate);
+            oneWeekLater.setDate(oneWeekLater.getDate() + 7);
+
+            if (new Date() < oneWeekLater) {
+                return res.status(400).json({ error: '거절된 요청입니다. 1주일 후에 다시 매칭을 시도할 수 있습니다.' });
+            }
+            message = '이제 매칭 요청을 다시 시도할 수 있습니다.';
+        } else if (request.status === 'accepted') {
+            return res.status(400).json({ error: '이미 매칭된 사용자입니다. 이 매칭 요청은 만료되었습니다.' });
+        }
+
         res.status(200).json({
             _id: notification.senderId._id,
             name: notification.senderId.name,
             department: notification.senderId.department,
             mbti: notification.senderId.mbti,
             profileImageUrl: notification.senderId.profileImageUrl,
+            status: request.status,
+            message
         });
     } catch (error) {
         console.error('매칭 요청 정보 조회 오류:', error);
         res.status(500).json({ error: '매칭 요청 정보를 가져오는 데 오류가 발생했습니다.' });
     }
 });
+
 
 
 module.exports = router;
