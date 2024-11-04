@@ -18,7 +18,7 @@ const fetchChatRooms = useCallback(async () => {
     const userId = await AsyncStorage.getItem('_id');
     const response = await axios.get(`http://192.168.0.53:5000/api/chat/get-chat-rooms-with-last-message/${userId}`);
     
-    // 응답 데이터 수정: userName을 학과 이름으로, 날짜 포맷 수정
+    // 응답 데이터 수정: userName을 department에 매핑하여 학과 이름으로 사용
     const formattedData = response.data.map(room => {
       const isToday = new Date(room.date).toDateString() === new Date().toDateString();
       const formattedDate = isToday
@@ -27,8 +27,8 @@ const fetchChatRooms = useCallback(async () => {
       
       return {
         ...room,
-        userName: room.userName, // 학과 이름으로 표시
-        date: formattedDate, // 포맷된 날짜
+        department: room.userName, // userName을 department로 매핑
+        date: formattedDate,       // 포맷된 날짜
       };
     });
 

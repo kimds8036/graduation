@@ -51,6 +51,8 @@ const ChatDetailScreen = ({ route }) => {
         senderId,
         recipientId: userData._id,
         message: newMessage,
+        timestamp: new Date().toISOString() // 현재 시간을 타임스탬프로 추가
+        
       };
 
       // 메시지를 서버에 전송
@@ -104,7 +106,7 @@ const ChatDetailScreen = ({ route }) => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
       >
-        <Text style={styles.chatTitle}>{userData.userName || '학과 정보 없음'}</Text>
+        <Text style={styles.chatTitle}>{userData.department || '학과 정보 없음'}</Text>
         <FlatList
           data={messages}
           renderItem={renderMessageItem}

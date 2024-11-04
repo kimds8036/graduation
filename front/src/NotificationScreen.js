@@ -82,7 +82,7 @@ const NotificationScreen = () => {
                     navigation.navigate('MatchingRequest', { userData: response.data });
                 }
             } catch (error) {
-                console.error('사용자 정보를 가져오는 데 오류가 발생했습니다.', error);
+
                 Alert.alert('오류', '이 요청은 이미 만료되었습니다.');
             }
         }

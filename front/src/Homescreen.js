@@ -123,7 +123,7 @@ function Homescreen() {
       const response = await axios.get(`http://192.168.0.53:5000/api/rejected-users/${currentUserId}`);
       setRejectedUsers(response.data.rejectedUserIds || []);
     } catch (error) {
-      console.error('거절된 사용자 데이터를 가져오는 중 오류:', error);
+
     }
   };
 

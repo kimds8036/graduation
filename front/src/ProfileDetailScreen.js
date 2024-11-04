@@ -37,7 +37,7 @@ function ProfileDetailScreen({ route, navigation }) {
 
       Alert.alert('알림 전송 성공', '관심 알림이 전송되었습니다.');
     } catch (error) {
-      console.error('알림 전송 오류:', error.response ? error.response.data : error.message);
+
       if (error.response && error.response.status === 400 && error.response.data.error === '이미 관심표시를 한 상대입니다!') {
         Alert.alert('이미 관심 표시를 한 상대입니다!', '같은 대상에게는 하루에 한번만 관심 알람을 보낼 수 있습니다!');
       } else {
