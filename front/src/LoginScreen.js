@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, Button, SafeAreaView, StyleSheet, TouchableOpacity, Alert, Switch } from 'react-native';
+import { View, Text, TextInput, SafeAreaView, StyleSheet, TouchableOpacity, Alert, Switch } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const LoginScreen = ({ navigation }) => {
     const [username, setUsername] = useState('');
@@ -16,7 +17,6 @@ const LoginScreen = ({ navigation }) => {
             const isAutoLogin = JSON.parse(await AsyncStorage.getItem('isAutoLoginEnabled'));
 
             if (isAutoLogin && token && userId) {
-                // 자동 로그인이 활성화되어 있고, 토큰과 사용자 ID가 존재하는 경우
                 navigation.navigate('HomeStack');
             }
         };
@@ -67,14 +67,15 @@ const LoginScreen = ({ navigation }) => {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.innerContainer}>
+<LinearGradient colors={['#f0f0f0', '#ffffff', '#f7f7f7']} style={styles.container}>
+<SafeAreaView style={styles.innerContainer}>
                 <Text style={styles.title}>Login</Text>
                 <TextInput
                     placeholder="Username"
                     value={username}
                     onChangeText={setUsername}
                     style={styles.input}
+                    placeholderTextColor="#aaa"
                 />
                 <TextInput
                     placeholder="Password"
@@ -82,22 +83,28 @@ const LoginScreen = ({ navigation }) => {
                     onChangeText={setPassword}
                     style={styles.input}
                     secureTextEntry
+                    placeholderTextColor="#aaa"
                 />
-                <Button title="Login" onPress={handleLogin} disabled={loading} />
+                
+                <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={loading}>
+                    <Text style={styles.loginButtonText}>{loading ? '로그인 중...' : '로그인'}</Text>
+                </TouchableOpacity>
 
                 <View style={styles.autoLoginContainer}>
-                    <Text>자동 로그인</Text>
+                    <Text style={styles.autoLoginText}>자동 로그인</Text>
                     <Switch
                         value={isAutoLoginEnabled}
                         onValueChange={handleAutoLoginToggle}
+                        thumbColor={isAutoLoginEnabled ? '#3b5998' : '#ccc'}
+                        trackColor={{ false: '#767577', true: '#81b0ff' }}
                     />
                 </View>
 
                 <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
                     <Text style={styles.signupText}>회원가입 하러가기</Text>
                 </TouchableOpacity>
-            </View>
-        </SafeAreaView>
+            </SafeAreaView>
+        </LinearGradient>
     );
 };
 
@@ -105,33 +112,60 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         justifyContent: 'center',
-        padding: 16,
-        backgroundColor: '#fff',
+        backgroundColor: '#f9f9f9', // 흰색 계열 배경 고정
     },
     innerContainer: {
+        flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        paddingHorizontal: 16,
     },
     title: {
-        fontSize: 24,
-        marginBottom: 24,
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: '#2d6a4f', // 은은한 초록색으로 제목 색상 변경
+        marginBottom: 30,
     },
     input: {
-        width: '100%',
-        padding: 8,
-        borderWidth: 1,
-        borderColor: '#ccc',
+        width: '90%',
+        padding: 15,
+        borderRadius: 25,
+        backgroundColor: '#ffffff',
         marginBottom: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 5,
+        elevation: 2,
     },
-    signupText: {
-        marginTop: 20,
-        color: 'blue',
+    loginButton: {
+        width: '90%',
+        padding: 15,
+        backgroundColor: '#95d5b2', // 은은한 초록색 버튼 배경
+        borderRadius: 25,
+        alignItems: 'center',
+        marginVertical: 10,
+    },
+    loginButtonText: {
+        color: '#ffffff', // 버튼 텍스트를 흰색으로 유지
         fontSize: 16,
+        fontWeight: '600',
     },
     autoLoginContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         marginVertical: 10,
+    },
+    autoLoginText: {
+        color: '#2d6a4f', // 은은한 초록색으로 텍스트 변경
+        fontSize: 16,
+        marginRight: 10,
+    },
+    signupText: {
+        marginTop: 20,
+        color: '#52b788', // 은은한 초록색 계열로 회원가입 텍스트 색상 변경
+        fontSize: 16,
+        textDecorationLine: 'underline',
     },
 });
 

@@ -7,20 +7,22 @@ const { ObjectId } = require('mongoose').Types;
 router.post('/start-tracking', async (req, res) => {
   const { userid, location, day, timestamp } = req.body;
 
-  try {
-    console.log(`동선 추적 시작 요청 받음 - userid: ${userid}`);
+  // 기본값 설정: userId와 day가 없을 때 "unknown_user"와 현재 요일을 기본으로 설정
+  const userId = userid || "unknown_user";
+  const trackingDay = day || new Date().toLocaleDateString('ko-KR', { weekday: 'long' });
 
-    // 새 트래킹 기록 추가
+  try {
+    console.log(`동선 추적 시작 요청 받음 - userId: ${userId}`);
+
+    // `Time_00`에 첫 위치 데이터를 저장
     const routeData = {
-      location: {
-        latitude: location.latitude,
-        longitude: location.longitude,
-        timestamp: timestamp || new Date(),
-      },
-      day: day,
+      userId,
+      day: trackingDay,
+      Time_00: `latitude: ${location?.latitude || 0}, longitude: ${location?.longitude || 0}, timestamp: ${timestamp || new Date()}`
     };
 
-    const newTracking = new Tracking({ userid, routes: [routeData], startDate: new Date() });
+    // 새로운 추적 데이터 생성
+    const newTracking = new Tracking(routeData);
     await newTracking.save();
 
     console.log(`저장된 동선 추적 데이터: ${JSON.stringify(newTracking)}`);
@@ -33,68 +35,70 @@ router.post('/start-tracking', async (req, res) => {
 
 // 동선 데이터 업데이트
 router.post('/update-tracking', async (req, res) => {
-  const { userid, latitude, longitude, timestamp, day } = req.body;
+  const { userid, location, timestamp } = req.body;
 
-  console.log(`동선 업데이트 요청 받음 - userid: ${userid}, latitude: ${latitude}, longitude: ${longitude}`);
-  
-  if (!latitude || !longitude) {
-    console.warn('위도와 경도 값이 없습니다.');
-    return res.status(400).json({ error: '위도와 경도 값이 필요합니다.' });
+  if (!location || !timestamp) {
+    return res.status(400).json({ error: '위치와 타임스탬프 정보가 필요합니다.' });
   }
 
   try {
-    const tracking = await Tracking.findOne({ userid });
-    if (tracking) {
-      console.log(`기존 추적 데이터 발견 - userid: ${userid}`);
-      const routeData = {
-        location: {
-          latitude: latitude,
-          longitude: longitude,
-          timestamp: timestamp || new Date(),
-        },
-        day: day,
-      };
-      tracking.routes.push(routeData);
-      await tracking.save();
+    // 시간에 따라 `Time_` 필드 지정
+    const currentTimeIndex = Math.floor((new Date(timestamp).getHours() * 60 + new Date(timestamp).getMinutes()) / 5);
+    const timeKey = `Time_${String(currentTimeIndex).padStart(2, '0')}`;
 
-      console.log(`동선 업데이트 완료 - userid: ${userid}`);
-      res.status(200).json({ message: '동선 데이터가 업데이트되었습니다.' });
-    } else {
-      console.warn(`추적 기록 없음 - userid: ${userid}`);
-      res.status(404).json({ error: '해당 사용자에 대한 동선 추적 기록이 없습니다.' });
-    }
+    // 업데이트할 데이터
+    const updateData = {};
+    updateData[timeKey] = `latitude: ${location.latitude}, longitude: ${location.longitude}, timestamp: ${timestamp}`;
+
+    // 기존 추적 데이터 찾고 업데이트
+    const tracking = await Tracking.findOneAndUpdate(
+      { userId: userid, day: new Date().toLocaleDateString('ko-KR', { weekday: 'long' }) },
+      { $set: updateData },
+      { new: true, upsert: true }
+    );
+
+    console.log(`동선 업데이트 완료 - userId: ${userid}, 시간 키: ${timeKey}`);
+    res.status(200).json({ message: '동선 데이터가 업데이트되었습니다.', trackingData: tracking });
   } catch (error) {
     console.error('동선 데이터 업데이트 중 오류:', error);
     res.status(500).json({ error: '동선 데이터 업데이트 중 오류가 발생했습니다.' });
   }
 });
-
+// 동선 추적 중지
+// 동선 추적 중지
 // 동선 추적 중지
 router.post('/stop-tracking', async (req, res) => {
-  const { userid, location, timestamp, day } = req.body;
+  const { userid, location, timestamp } = req.body;
 
   try {
-    console.log(`동선 추적 중지 요청 - userid: ${userid}`);
+    const trackingDay = new Date().toLocaleDateString('ko-KR', { weekday: 'long' });
 
-    const tracking = await Tracking.findOne({ userid });
+    // 시간에 따라 `Time_` 필드 지정
+    const currentTimeIndex = Math.floor((new Date(timestamp).getHours() * 60 + new Date(timestamp).getMinutes()) / 5);
+    const timeKey = `Time_${String(currentTimeIndex).padStart(2, '0')}`;
+
+    if (!userid) {
+      // userId가 없는 경우에도 종료 메시지를 반환
+      console.warn('userId가 없어 강제 종료 처리됨');
+      return res.status(200).json({ message: 'userId가 없지만 동선 추적이 강제 중지되었습니다.' });
+    }
+
+    // 추적 데이터 업데이트
+    const updateData = {};
+    updateData[timeKey] = `latitude: ${location.latitude}, longitude: ${location.longitude}, timestamp: ${timestamp}`;
+
+    const tracking = await Tracking.findOneAndUpdate(
+      { userId: userid, day: trackingDay },
+      { $set: updateData, endDate: new Date() },
+      { new: true }
+    );
+
     if (tracking) {
-      const routeData = {
-        location: {
-          latitude: location.latitude,
-          longitude: location.longitude,
-          timestamp: timestamp || new Date(),
-        },
-        day: day,
-      };
-      tracking.routes.push(routeData);
-      tracking.endDate = new Date();
-      await tracking.save();
-
-      console.log(`동선 추적 중지 - userid: ${userid}`);
+      console.log(`동선 추적 중지 완료 - userId: ${userid}`);
       res.status(200).json({ message: '동선 추적이 중지되었습니다.', trackingData: tracking });
     } else {
-      console.warn(`추적 기록 없음 - userid: ${userid}`);
-      res.status(404).json({ error: '해당 사용자에 대한 동선 추적 기록이 없습니다.' });
+      console.warn(`추적 기록 없음 - userId: ${userid}`);
+      res.status(200).json({ message: '추적 기록이 없어도 강제 중지되었습니다.' });
     }
   } catch (error) {
     console.error('동선 추적 중지 중 오류:', error);

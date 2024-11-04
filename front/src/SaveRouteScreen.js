@@ -8,6 +8,7 @@ import RowBar from './Rowbar'; // 경로는 프로젝트에 맞게 수정
 const SaveRouteScreen = () => {
   const [tracking, setTracking] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [locationWatcher, setLocationWatcher] = useState(null);
 
   useEffect(() => {
     const checkTrackingStatus = async () => {
@@ -23,10 +24,11 @@ const SaveRouteScreen = () => {
     setLoading(true);
 
     const storedId = await AsyncStorage.getItem('_id');
+    const userId = storedId || 'default_user';  // 기본 userId 설정
+    const day = new Date().toLocaleDateString('ko-KR', { weekday: 'long' });  // 기본 날짜 설정
+
     if (!storedId) {
-      Alert.alert('로그인 정보가 없습니다.');
-      setLoading(false);
-      return;
+      Alert.alert('로그인 정보가 없습니다. 기본 userId로 동선 추적을 시작합니다.');
     }
 
     Alert.alert('동선 추적을 시작합니다!', '동선 추적은 앱이 활성화된 동안에만 작동합니다.');
@@ -40,37 +42,44 @@ const SaveRouteScreen = () => {
       }
 
       // 현재 위치 가져오기
-      let currentLocation = await Location.getCurrentPositionAsync({});
+      let currentLocation;
+      try {
+        currentLocation = await Location.getCurrentPositionAsync({});
+      } catch (error) {
+        console.warn('위치를 가져오는 중 오류 발생, 기본 좌표로 설정합니다.');
+        currentLocation = { coords: { latitude: 0, longitude: 0 } };  // 기본 좌표
+      }
+
       await axios.post('http://192.168.0.53:5000/api/tracking/start-tracking', {
-        userId: storedId,
+        userId: userId,
         location: {
           latitude: currentLocation.coords.latitude,
           longitude: currentLocation.coords.longitude,
         },
-        day: new Date().toLocaleDateString('ko-KR', { weekday: 'long' }),
+        day: day,
         timestamp: new Date().toISOString(),
       });
 
       await AsyncStorage.setItem('isTracking', 'true');
       setTracking(true);
 
-      // 포그라운드에서 위치 추적 시작
-      Location.watchPositionAsync({
+      const watcher = await Location.watchPositionAsync({
         accuracy: Location.Accuracy.High,
         timeInterval: 5000,  // 5초마다 업데이트
         distanceInterval: 50, // 50미터마다 업데이트
       }, (location) => {
-        // 위치 정보 서버로 전송
         axios.post('http://192.168.0.53:5000/api/tracking/update-tracking', {
-          userId: storedId,
+          userId: userId,
           location: {
             latitude: location.coords.latitude,
             longitude: location.coords.longitude,
           },
-          day: new Date().toLocaleDateString('ko-KR', { weekday: 'long' }),
+          day: day,
           timestamp: new Date().toISOString(),
         });
       });
+
+      setLocationWatcher(watcher);
 
     } catch (error) {
       console.error('동선 추적 시작 중 오류:', error);
@@ -79,6 +88,7 @@ const SaveRouteScreen = () => {
       setLoading(false);
     }
   };
+
 
   const stopTracking = async () => {
     const storedId = await AsyncStorage.getItem('_id');
@@ -104,9 +114,15 @@ const SaveRouteScreen = () => {
       await AsyncStorage.setItem('isTracking', 'false');
       setTracking(false);
 
+      // 위치 추적 중단
+      if (locationWatcher) {
+        locationWatcher.remove();  // watcher 객체가 추적을 중단하도록 함
+        setLocationWatcher(null);
+      }
+
       Alert.alert('동선 추적이 중단되었습니다.');
     } catch (error) {
-      console.error('동선 추적 중단 중 오류:', error);
+
       Alert.alert('동선 추적 중단 중 오류가 발생했습니다.');
     }
   };

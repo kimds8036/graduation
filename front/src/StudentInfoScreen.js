@@ -247,7 +247,7 @@ const handleConfirmPasswordChange = (text) => {
 const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f9f9f9', // 은은한 흰색 배경
   },
   container: {
     flexGrow: 1,
@@ -255,25 +255,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     paddingBottom: 50,
-    backgroundColor: '#fff',
-  },
-  input: {
-    width: '100%',
-    padding: 8,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    marginBottom: 16,
-    borderRadius: 5,
-  },
-  match: {
-    borderColor: 'green',  // 비밀번호가 일치할 때의 테두리 색상
-  },
-  noMatch: {
-    borderColor: 'red',  // 비밀번호가 일치하지 않을 때의 테두리 색상
+    backgroundColor: '#f9f9f9',
   },
   title: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: 'bold',
+    color: '#2d6a4f', // 부드러운 초록색
     marginBottom: 20,
     marginTop: 40,
   },
@@ -284,64 +271,91 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
-    padding: 10,
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: '#ffffff',
     marginBottom: 15,
-    borderRadius: 5,
-    backgroundColor: '#f9f9f9',
-    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
   },
   readOnlyInput: {
     backgroundColor: '#e0e0e0',
     color: '#888',
   },
+  match: {
+    borderColor: '#2d6a4f',  // 비밀번호가 일치할 때의 초록색 테두리
+  },
+  noMatch: {
+    borderColor: '#ff6b6b',  // 비밀번호가 일치하지 않을 때의 빨간색 테두리
+  },
   label: {
     fontSize: 16,
+    fontWeight: '600',
     marginBottom: 8,
+    color: '#555', // 어두운 회색
   },
   dropdown: {
     padding: 12,
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 5,
-    backgroundColor: '#f9f9f9',
+    borderRadius: 8,
+    backgroundColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
   },
   dropdownText: {
     fontSize: 16,
+    color: '#555',
   },
   profileText: {
     marginTop: 30,
     fontSize: 16,
     fontWeight: 'bold',
+    color: '#2d6a4f',
   },
   profileImageContainer: {
-    width: 200,
-    height: 200,
-    backgroundColor: '#f0f0f0',
+    width: 150,
+    height: 150,
+    backgroundColor: '#e6f0e9', // 은은한 초록 배경
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 20,
-    borderRadius: 10,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: '#d4d4d4',
   },
   profileImage: {
     width: '100%',
     height: '100%',
-    borderRadius: 10,
+    borderRadius: 15,
   },
   profilePlaceholderText: {
-    fontSize: 16,
-    color: '#aaa',
+    fontSize: 14,
+    color: '#888',
   },
   submitButton: {
     marginTop: 40,
-    backgroundColor: '#007BFF',
+    backgroundColor: '#95d5b2', // 부드러운 초록색 버튼
     padding: 15,
-    borderRadius: 5,
+    borderRadius: 10,
     width: '100%',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
   },
   submitButtonText: {
-    color: '#fff',
-    textAlign: 'center',
+    color: '#ffffff',
     fontSize: 16,
+    fontWeight: '600',
   },
   modalOverlay: {
     flex: 1,
@@ -349,20 +363,43 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
   },
+  modalContent: {
+    backgroundColor: '#ffffff',
+    padding: 20,
+    borderRadius: 15,
+    alignItems: 'center',
+    width: '80%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#555',
+  },
   dropdownMenu: {
     width: '80%',
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffff',
     borderRadius: 10,
     padding: 10,
     maxHeight: 300,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
   },
   dropdownItem: {
     padding: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+    borderBottomColor: '#eee',
   },
   dropdownItemText: {
     fontSize: 16,
+    color: '#555',
   },
 });
 
