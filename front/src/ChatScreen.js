@@ -36,7 +36,7 @@ const fetchChatRooms = useCallback(async () => {
       
       return {
         ...room,
-        userName: room.userName, // 학과 이름으로 표시
+        department: room.userName, // 학과 이름으로 표시
         date: formattedDate,     // 포맷된 날짜
         profileImageUrl: room.profileImageUrl, // 프로필 이미지 URL 포함
       };
