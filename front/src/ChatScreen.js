@@ -51,6 +51,7 @@ const fetchChatRooms = useCallback(async () => {
 
 // ChatScreen.js
 const handleChatPress = (chatRoom) => {
+  console.log('네비게이트 전 유저 데이터:', chatRoom); // 유저 데이터 로그 확인
   navigation.navigate('ChatDetailScreen', { userData: chatRoom });
 };
 

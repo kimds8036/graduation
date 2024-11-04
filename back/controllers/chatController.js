@@ -101,6 +101,7 @@ exports.getChatRoomsWithLastMessage = async (req, res) => {
         return {
           roomId: room._id,
           userName: otherUser?.department || '학과 정보 없음', // 학과 정보로 표시
+          _id: otherUserId, // 상대방 ID 추가
           lastMessage: lastMessage ? lastMessage.message : '',
           date: lastMessage ? lastMessage.timestamp : room.createdAt,
           unread,

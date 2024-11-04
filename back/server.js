@@ -1,4 +1,6 @@
 const express = require('express');
+const http = require('http');
+const socketIo = require('socket.io');
 const mongoose = require('mongoose');
 const redis = require('redis');
 const cors = require('cors');
@@ -24,6 +26,8 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
+const server = http.createServer(app);
+const io = socketIo(server);
  // JSON 요청을 처리할 수 있게 설정
 
 // MongoDB 연결
@@ -59,6 +63,31 @@ app.use('/api/matches', matchRoutes);
 
 
 app.use('/api/users', userRoute);
+
+
+
+io.on('connection', (socket) => {
+  console.log('새로운 클라이언트가 연결되었습니다:', socket.id);
+
+  socket.on('send-message', (messageData) => {
+    // 메시지를 수신하면 다른 클라이언트에게 전송
+    io.emit('receive-message', messageData);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('클라이언트가 연결을 끊었습니다:', socket.id);
+  });
+  socket.on('connect', () => {
+    console.log('소켓 연결 성공:', socket.id);
+  });
+  
+});
+
+
+
+
+
+
 // 서버 실행
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
