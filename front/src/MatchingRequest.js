@@ -27,11 +27,21 @@ const MatchingRequest = ({ route, navigation }) => {
   const handleAccept = async () => {
     try {
       const senderId = await AsyncStorage.getItem('_id');
+      const recipientId = userData._id;
+
+      // 매칭 수락 API 호출
       await axios.put(`http://192.168.0.53:5000/api/notifications/respond-match-request`, {
         senderId,
-        recipientId: userData._id,
+        recipientId,
         status: 'accepted'
       });
+
+      // 채팅방 생성 API 호출
+      await axios.post('http://192.168.0.53:5000/api/chat/get-or-create-chat-room', {
+        user1: senderId,
+        user2: recipientId,
+      });
+
       setShowAcceptModal(true); // 매칭 수락 후 모달 표시
     } catch (error) {
       console.error('매칭 요청 수락 오류:', error);
@@ -57,7 +67,7 @@ const MatchingRequest = ({ route, navigation }) => {
 
   const handleGoToChat = () => {
     setShowAcceptModal(false);
-    navigation.navigate('ChatScreen', { userData }); // 채팅 화면으로 이동
+    navigation.navigate('ChatDetailScreen', { userData }); // 채팅 화면으로 이동
   };
 
   const handleGoHome = () => {

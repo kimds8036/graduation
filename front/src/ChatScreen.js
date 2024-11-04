@@ -1,59 +1,69 @@
-// ChatScreen.js
-import React from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
-import { useNavigation } from '@react-navigation/native'; // Navigation hook import
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, SafeAreaView, RefreshControl } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import TopBar from './TopBar';
 import RowBar from './Rowbar';
 
-const chatData = [
-  {
-    id: '1',
-    name: '응용화학과(여)',
-    message: '9시 어때?',
-    date: 'today 16:30',
-    status: 'N',
-  },
-  {
-    id: '2',
-    name: '경제통상학과(남)',
-    message: '졸업 하자',
-    date: '3-29',
-    status: 'N',
-  },
-  {
-    id: '3',
-    name: '의료 공학과(여)',
-    message: '팟 구함?',
-    date: '3-27',
-    status: 'N',
-  },
-  {
-    id: '4',
-    name: '신문방송학과(남)',
-    message: '기름값 2000원 입금좀',
-    date: '3-14',
-    status: '',
-  },
-];
-
 const ChatScreen = () => {
-  const navigation = useNavigation(); // Navigation hook 사용
+  const navigation = useNavigation();
+  const [chatRooms, setChatRooms] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // 채팅 아이템 클릭 시 상세 화면으로 이동
-  const handleChatPress = (chat) => {
-    navigation.navigate('ChatDetailScreen', { chat }); // 선택한 채팅방 정보 전달
+  // 채팅방 목록을 가져오는 함수
+// ChatScreen.js
+const fetchChatRooms = useCallback(async () => {
+  try {
+    const userId = await AsyncStorage.getItem('_id');
+    const response = await axios.get(`http://192.168.0.53:5000/api/chat/get-chat-rooms-with-last-message/${userId}`);
+    
+    // 응답 데이터 수정: userName을 학과 이름으로, 날짜 포맷 수정
+    const formattedData = response.data.map(room => {
+      const isToday = new Date(room.date).toDateString() === new Date().toDateString();
+      const formattedDate = isToday
+        ? new Date(room.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        : new Date(room.date).toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' });
+      
+      return {
+        ...room,
+        userName: room.userName, // 학과 이름으로 표시
+        date: formattedDate, // 포맷된 날짜
+      };
+    });
+
+    setChatRooms(formattedData);
+  } catch (error) {
+    console.error('채팅방 목록 가져오기 오류:', error);
+  }
+}, []);
+
+
+  useEffect(() => {
+    fetchChatRooms();
+  }, [fetchChatRooms]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchChatRooms();
+    setRefreshing(false);
   };
 
-  // 채팅 아이템 렌더링
+// ChatScreen.js
+const handleChatPress = (chatRoom) => {
+  navigation.navigate('ChatDetailScreen', { userData: chatRoom });
+};
+
+
   const renderItem = ({ item }) => (
     <TouchableOpacity style={styles.chatItem} onPress={() => handleChatPress(item)}>
       <View style={styles.chatContent}>
-        <Text style={styles.chatName}>{item.name}</Text>
-        <Text style={styles.chatMessage}>{item.message}</Text>
+        <Text style={styles.chatName}>{item.userName}</Text>
+        <Text style={styles.chatMessage}>{item.lastMessage}</Text>
       </View>
       <View style={styles.chatInfo}>
         <Text style={styles.chatDate}>{item.date}</Text>
-        {item.status === 'N' && <Text style={styles.chatStatus}>N</Text>}
+        {item.unread > 0 && <Text style={styles.chatStatus}>{item.unread}</Text>}
       </View>
     </TouchableOpacity>
   );
@@ -62,24 +72,27 @@ const ChatScreen = () => {
     <SafeAreaView style={styles.safeArea}>
       <TopBar />
       <FlatList
-        data={chatData}
+        data={chatRooms}
         renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.roomId}
         style={styles.chatList}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>매칭을 하여 채팅방을 개설하세요</Text>
+          </View>
+        }
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       />
-      <RowBar/>
+      <RowBar />
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  chatList: {
-    flex: 1,
-  },
+  safeArea: { flex: 1, backgroundColor: '#fff' },
+  chatList: { flex: 1 },
   chatItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -88,30 +101,22 @@ const styles = StyleSheet.create({
     borderBottomColor: '#ccc',
     backgroundColor: '#f5f5f5',
   },
-  chatContent: {
-    flex: 3,
-  },
-  chatName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 2,
-  },
-  chatMessage: {
-    color: '#555',
-  },
-  chatInfo: {
+  chatContent: { flex: 3 },
+  chatName: { fontSize: 16, fontWeight: 'bold', marginBottom: 2 },
+  chatMessage: { color: '#555' },
+  chatInfo: { flex: 1, alignItems: 'flex-end', justifyContent: 'center' },
+  chatDate: { fontSize: 12, color: '#888' },
+  chatStatus: { fontSize: 12, color: 'red', marginTop: 5 },
+  emptyContainer: {
     flex: 1,
-    alignItems: 'flex-end',
     justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
   },
-  chatDate: {
-    fontSize: 12,
+  emptyText: {
+    fontSize: 16,
     color: '#888',
-  },
-  chatStatus: {
-    fontSize: 12,
-    color: 'red',
-    marginTop: 5,
+    textAlign: 'center',
   },
 });
 

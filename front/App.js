@@ -22,6 +22,7 @@ import Help from './src/Help';
 import Writepostscreen from './src/Writepostscreen';
 import ProfileDetailScreen from './src/ProfileDetailScreen';
 import MatchingRequest from './src/MatchingRequest';
+import ChatDetailScreen from './src/ChatDetailScreen';
 
 
 
@@ -49,6 +50,7 @@ function HomeStack() {
       <Stack.Screen name="ProfileDetailScreen" component={ProfileDetailScreen} options={{ headerShown: false }} />
       <Stack.Screen name="AuthStack" component={AuthStack} options={{ headerShown: false }} />
       <Stack.Screen name="MatchingRequest" component={MatchingRequest} options={{ headerShown: false }} />
+      <Stack.Screen name="ChatDetailScreen" component={ChatDetailScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }
