@@ -78,12 +78,9 @@ exports.getChatRoomsWithLastMessage = async (req, res) => {
         // 상대방 ID 식별
         const otherUserId = room.user1 === userId ? room.user2 : room.user1;
 
-        // 상대방 학과 정보 조회
-        const otherUser = await User.findById(otherUserId).select('department');
+        // 상대방 학과 정보와 프로필 이미지 URL 조회
+        const otherUser = await User.findById(otherUserId).select('department profileImageUrl');
         
-        // 학과 정보 로그로 확인
-        console.log(`채팅방 상대 학과 정보: ${otherUser ? otherUser.department : '학과 정보 없음'}`);
-
         // 가장 최근 메시지 가져오기
         const lastMessage = await Message.findOne({
           $or: [
@@ -92,6 +89,7 @@ exports.getChatRoomsWithLastMessage = async (req, res) => {
           ]
         }).sort({ timestamp: -1 });
         
+        // 읽지 않은 메시지 개수 가져오기
         const unread = await Message.countDocuments({
           recipientId: userId,
           senderId: otherUserId,
@@ -100,7 +98,8 @@ exports.getChatRoomsWithLastMessage = async (req, res) => {
 
         return {
           roomId: room._id,
-          userName: otherUser?.department || '학과 정보 없음', // 학과 정보로 표시
+          userName: otherUser?.department || '학과 정보 없음', // 학과 이름 표시
+          profileImageUrl: otherUser?.profileImageUrl || '',  // 프로필 이미지 URL 추가
           _id: otherUserId, // 상대방 ID 추가
           lastMessage: lastMessage ? lastMessage.message : '',
           date: lastMessage ? lastMessage.timestamp : room.createdAt,
