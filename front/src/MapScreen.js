@@ -56,7 +56,7 @@ export default function MapScreen() {
         setUsers(Array.isArray(data) ? data : []);
       } catch (error) {
         console.log('Error fetching users:', error);
-        Alert.alert('사용자 정보 오류', '사용자 정보를 가져오는 중 오류가 발생했습니다.');
+        
       }
     };
 
@@ -85,12 +85,11 @@ export default function MapScreen() {
     <View style={styles.container}>
       <MapView
         ref={(ref) => (mapRef = ref)}
-        style={styles.map}
+        style={{ flex: 1 }}
         region={region}
-        showsUserLocation={true} // 현재 사용자 위치 표시
+        showsUserLocation={true}
         onRegionChangeComplete={(region) => setRegion(region)}
       >
-        {/* 사용자 위치에 마커 표시 */}
         {users.map((user) => (
           <Marker
             key={user._id}
@@ -98,51 +97,43 @@ export default function MapScreen() {
               latitude: user.location.latitude,
               longitude: user.location.longitude,
             }}
-            title={user.name} // 사용자의 이름을 마커 위에 표시
+            title={user.name}
           />
         ))}
       </MapView>
 
+      {/* 내 위치 버튼 */}
       <TouchableOpacity style={styles.locationButton} onPress={goToCurrentLocation}>
         <Ionicons name="compass-outline" size={22} color="black" />
       </TouchableOpacity>
 
-      {/* SafeAreaView for Rowbar at the bottom */}
+      {/* 하단 Rowbar */}
       <SafeAreaView style={styles.rowbarContainer}>
         <Rowbar />
       </SafeAreaView>
-      
     </View>
 );
+
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  map: {
-    width: Dimensions.get('window').width,
-    height: Dimensions.get('window').height,
+    position: 'relative', // 추가하여 내 위치 버튼이 겹치지 않도록
   },
   locationButton: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 110, // Rowbar 위에 위치하도록 조정
     right: 20,
     backgroundColor: '#fff',
     padding: 10,
-    borderRadius: 30, // 동그란 버튼
+    borderRadius: 30,
     shadowColor: '#000',
     shadowOpacity: 0.3,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 2,
     elevation: 5,
-    width: 40, // 버튼 크기
+    width: 40,
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
@@ -152,10 +143,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: '100%',
     backgroundColor: 'white',
-    paddingBottom: 10, // 필요에 따라 조절
-    paddingLeft: 0,   // 좌측 패딩 제거
-    paddingRight: 0,  // 우측 패딩 제거
-    alignItems: 'stretch', // 중앙 정렬 방지
-},
-
+    paddingBottom: 10,
+    alignItems: 'stretch',
+  },
 });
