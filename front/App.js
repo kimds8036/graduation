@@ -24,7 +24,7 @@ import ProfileDetailScreen from './src/ProfileDetailScreen';
 import MatchingRequest from './src/MatchingRequest';
 import ChatDetailScreen from './src/ChatDetailScreen';
 
-
+import VoteBoardScreen from './src/VoteBoardScreen';
 
 
 
@@ -51,6 +51,7 @@ function HomeStack() {
       <Stack.Screen name="AuthStack" component={AuthStack} options={{ headerShown: false }} />
       <Stack.Screen name="MatchingRequest" component={MatchingRequest} options={{ headerShown: false }} />
       <Stack.Screen name="ChatDetailScreen" component={ChatDetailScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="VoteBoardScreen" component={VoteBoardScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }

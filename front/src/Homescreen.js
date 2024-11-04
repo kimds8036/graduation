@@ -101,6 +101,21 @@ function Homescreen() {
     fetchUsers();
   }, [matchedUsers, rejectedUsers]);
 
+  const [topPost, setTopPost] = useState(null);
+
+  useEffect(() => {
+    axios.get('http://192.168.0.53:5000/api/writepost')
+      .then(response => {
+        if (response.data && response.data.length > 0) {
+          const sortedPosts = response.data.sort((a, b) => b.recommendations - a.recommendations);
+          setTopPost(sortedPosts[0]);
+        }
+      })
+      .catch(error => {
+        console.error('게시글 가져오기 오류:', error);
+      });
+  }, []);
+
   // 거절된 사용자 목록 가져오기
   const fetchRejectedUsers = async () => {
     try {
@@ -155,7 +170,7 @@ function Homescreen() {
             <Text style={styles.moreText}>더보기 &gt;</Text>
           </TouchableOpacity>
         </View>
-
+  
         <View style={styles.userContainer}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             {randomUsers.map((user, index) => (
@@ -163,58 +178,42 @@ function Homescreen() {
             ))}
           </ScrollView>
         </View>
-
-        <View style={styles.sectionWithMarginTop}>
+  
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>함께 할 친구를 찾고있어요</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('BoardScreen')}>
+          <TouchableOpacity onPress={() => navigation.navigate('VoteBoardScreen')}>
             <Text style={styles.moreText}>더보기 &gt;</Text>
           </TouchableOpacity>
         </View>
-
-        <ScrollView 
-          horizontal 
-          pagingEnabled 
-          showsHorizontalScrollIndicator={false}
-          onScroll={onScroll}
-          scrollEventThrottle={16} 
-          style={styles.cardSlider}
-        >
-          {[1, 2, 3].map((_, index) => (
-            <View key={index} style={styles.activityCard}>
-              <Image
-                source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/graduate-aee1b.appspot.com/o/profileImages%2Fback1.jpg?alt=media&token=94cf2077-2107-416d-ab71-600e453af5a5' }}
-                style={styles.activityImage}
-              />
-              <View style={styles.overlay} />
-              <View style={styles.activityInfo}>
-                <View style={styles.textContainer}>
-                  <Text style={styles.activityTitle}>단원동 혼밥 탈출</Text>
-                  <Text style={styles.activityDetails}>성별 무관 / 학과 무관 / 19:00</Text>
-                </View>
-                <TouchableOpacity style={styles.likeButton}>
-                  <Text>👍 7</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ))}
-        </ScrollView>
-
-        {/* Indicator Dots */}
-        <View style={styles.indicatorContainer}>
-          {[0, 1, 2].map((index) => (
-            <View 
-              key={index} 
-              style={[
-                styles.indicator, 
-                currentIndex === index ? styles.activeIndicator : null
-              ]}
+  
+        {topPost && (
+          <TouchableOpacity
+            style={styles.activityCard}
+            onPress={() => navigation.navigate('PostDetailScreen', { post: topPost })}
+          >
+            <Image
+              source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/graduate-aee1b.appspot.com/o/profileImages%2Fback1.jpg?alt=media&token=94cf2077-2107-416d-ab71-600e453af5a5' }}
+              style={styles.activityImage}
             />
-          ))}
-        </View>
+            <View style={styles.overlay} />
+            <View style={styles.activityInfo}>
+              <View style={styles.textContainer}>
+                <Text style={styles.activityTitle}>{topPost.title}</Text>
+                <Text style={styles.activityDetails}>
+                  {topPost.gender} | {topPost.startTime} - {topPost.endTime} | 현재 인원: {topPost.currentParticipants} / {topPost.numberOfPeople}
+                </Text>
+              </View>
+              <TouchableOpacity style={styles.likeButton}>
+                <Text>👍 {topPost.recommendations}</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        )}
       </ScrollView>
       <Rowbar />
     </SafeAreaView>
   );
+  
 }
 
 const styles = StyleSheet.create({

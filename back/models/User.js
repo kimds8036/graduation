@@ -9,7 +9,10 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   mbti: { type: String },  // MBTI 필드 추가
   profileImageUrl: { type: String },  // 프로필 이미지 URL 필드 추가
-  isAutoLogin: { type: Boolean, default: false }  // 자동 로그인 여부
+  isAutoLogin: { type: Boolean, default: false },  // 자동 로그인 여부
+  categories: [{ type: String }], // 선택된 카테고리를 배열로 추가
+
+  
 });
 
 // 비밀번호 해싱 미들웨어

@@ -13,6 +13,7 @@ const notificationRoutes = require('./routes/notificationRoutes');
 const trackingRoute = require('./routes/trackingRoute'); 
 const matchRoutes = require('./routes/matchRoutes');
 const chatRoutes = require('./routes/chatRoutes');
+const postRoutes = require('./routes/postRoutes'); // 게시글 라우트 분리
 
 
 
@@ -54,6 +55,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/tracking', trackingRoute); 
 app.use('/api/chat', chatRoutes);
+app.use('/api/writepost', postRoutes); // 게시글 라우트 설정
 
 
 

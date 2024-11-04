@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Dimensions, TouchableOpacity, Alert, SafeAreaView } from 'react-native';
+import { StyleSheet, View, Dimensions, TouchableOpacity, Image, Alert, SafeAreaView } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import RowBar from './Rowbar'; // src 폴더에 RowBar가 있는 경우 경로 조정
+import Rowbar from './Rowbar';
+
+
 
 export default function MapScreen() {
   const [location, setLocation] = useState(null);
   const [region, setRegion] = useState(null);
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState([]); // 사용자 데이터를 저장할 상태
 
   let mapRef = null;
 
@@ -35,6 +38,7 @@ export default function MapScreen() {
       }
     })();
 
+    // 사용자 정보를 가져오는 함수
     const fetchUsers = async () => {
       try {
         const response = await fetch('http://192.168.24.108:5000/api/users/all', {
@@ -48,7 +52,7 @@ export default function MapScreen() {
         }
 
         const data = await response.json();
-        console.log('Fetched users:', data);
+        console.log('Fetched users:', data); // 응답 데이터 확인
         setUsers(Array.isArray(data) ? data : []);
       } catch (error) {
         console.log('Error fetching users:', error);
@@ -70,7 +74,7 @@ export default function MapScreen() {
       };
 
       if (mapRef) {
-        mapRef.animateToRegion(newRegion, 1000);
+        mapRef.animateToRegion(newRegion, 1000); // 1초 동안 부드럽게 이동
       }
     } catch (error) {
       Alert.alert('위치 오류', '현재 위치를 가져오는 중 오류가 발생했습니다.');
@@ -78,63 +82,80 @@ export default function MapScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.mapContainer}>
-        <MapView
-          ref={(ref) => (mapRef = ref)}
-          style={styles.map}
-          region={region}
-          showsUserLocation={true}
-          onRegionChangeComplete={(region) => setRegion(region)}
-        >
-          {users.map((user) => (
-            <Marker
-              key={user._id}
-              coordinate={{
-                latitude: user.location.latitude,
-                longitude: user.location.longitude,
-              }}
-              title={user.name}
-            />
-          ))}
-        </MapView>
+    <View style={styles.container}>
+      <MapView
+        ref={(ref) => (mapRef = ref)}
+        style={styles.map}
+        region={region}
+        showsUserLocation={true} // 현재 사용자 위치 표시
+        onRegionChangeComplete={(region) => setRegion(region)}
+      >
+        {/* 사용자 위치에 마커 표시 */}
+        {users.map((user) => (
+          <Marker
+            key={user._id}
+            coordinate={{
+              latitude: user.location.latitude,
+              longitude: user.location.longitude,
+            }}
+            title={user.name} // 사용자의 이름을 마커 위에 표시
+          />
+        ))}
+      </MapView>
 
-        <TouchableOpacity style={styles.locationButton} onPress={goToCurrentLocation}>
-          <Ionicons name="compass-outline" size={22} color="black" />
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity style={styles.locationButton} onPress={goToCurrentLocation}>
+        <Ionicons name="compass-outline" size={22} color="black" />
+      </TouchableOpacity>
 
-      <RowBar />
-    </SafeAreaView>
-  );
+      {/* SafeAreaView for Rowbar at the bottom */}
+      <SafeAreaView style={styles.rowbarContainer}>
+        <Rowbar />
+      </SafeAreaView>
+      
+    </View>
+);
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  mapContainer: {
+  safeArea: {
     flex: 1,
+    backgroundColor: '#fff',
   },
   map: {
     width: Dimensions.get('window').width,
-    height: Dimensions.get('window').height - 10, // RowBar 높이를 제외한 MapView 높이
+    height: Dimensions.get('window').height,
   },
   locationButton: {
     position: 'absolute',
-    bottom: 80,
+    bottom: 20,
     right: 20,
     backgroundColor: '#fff',
     padding: 10,
-    borderRadius: 30,
+    borderRadius: 30, // 동그란 버튼
     shadowColor: '#000',
     shadowOpacity: 0.3,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 2,
     elevation: 5,
-    width: 40,
+    width: 40, // 버튼 크기
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  rowbarContainer: {
+    position: 'absolute',
+    bottom: 0,
+    width: '100%',
+    backgroundColor: 'white',
+    paddingBottom: 10, // 필요에 따라 조절
+    paddingLeft: 0,   // 좌측 패딩 제거
+    paddingRight: 0,  // 우측 패딩 제거
+    alignItems: 'stretch', // 중앙 정렬 방지
+},
+
 });
